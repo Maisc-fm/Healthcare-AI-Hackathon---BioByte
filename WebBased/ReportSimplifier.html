@@ -79,7 +79,7 @@
   /* ================= PRINT STYLES ================= */
   @media print {
     /* Hide non-printable web controls */
-    header, .ekg-track, .tab-nav, #chatFab, #chatPanel, button, a[href="page1.html"] {
+    header, .ekg-track, .tab-nav, #chatFab, #chatPanel, button, a[href="page1.html"], a[href="login.html"] {
       display: none !important;
     }
     
@@ -120,13 +120,18 @@
       </div>
     </div>
 
-    <div class="flex items-center gap-3 sm:gap-5">
+    <div class="flex items-center gap-3 sm:gap-4">
       <div class="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full pl-2.5 pr-3 py-1.5">
         <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
         <span class="text-xs font-semibold text-emerald-700">Records Verified</span>
       </div>
       <a href="page1.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition focus-ring flex items-center gap-1.5">
         <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Dashboard
+      </a>
+
+      <!-- LOG OUT BUTTON -->
+      <a href="login.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition focus-ring flex items-center gap-1.5">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Log Out
       </a>
     </div>
   </div>
@@ -147,8 +152,8 @@
 <div class="bg-slate-900 text-white py-3.5 border-b border-slate-800">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between flex-wrap gap-3">
     <div class="flex items-center gap-3 flex-wrap">
-      <span class="font-extrabold text-sm sm:text-base tracking-wide">FERNANDEZ</span>
-      <span class="mono text-xs text-slate-400">DNI: 10.719.045 · DOB: 12-MAR-1954 (72Y) · M</span>
+      <span class="font-extrabold text-sm sm:text-base tracking-wide" id="patientBarName">MARCUS IBRAHIM</span>
+      <span class="mono text-xs text-slate-400" id="patientBarMeta">IC: 660412-13-5891 · AGE: 58Y · M</span>
       <span class="text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
         <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> PENICILLIN (RASH)
       </span>
@@ -168,7 +173,7 @@
 
 <div class="bg-white border-b border-slate-200 py-2 text-xs text-slate-500">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 mono">
-    Compiled from 5 source documents across CERENE Medical Facility · Last updated 08-Mar-2021
+    Compiled from 5 source documents across SGH Medical Facility · Last updated 08-Mar-2021
   </div>
 </div>
 
@@ -187,7 +192,7 @@
   </div>
 </div>
 
-<!-- ============ MAIN CONTENT CONTAINER (TARGETED FOR PDF EXPORT) ============ -->
+<!-- ============ MAIN CONTENT CONTAINER ============ -->
 <main id="exportableArea" class="max-w-7xl mx-auto px-4 sm:px-6 py-8 bg-white">
 
   <!-- TAB 1: COMPILED REPORT -->
@@ -229,9 +234,9 @@
 
         <div class="grid grid-cols-1 md:grid-cols-12 p-5 gap-2 md:gap-0 items-center hover:bg-slate-50/50 transition bg-blue-50/30">
           <div class="col-span-2 mono font-bold text-blue-600">2021-03-08</div>
-          <div class="col-span-3 text-slate-500 font-medium">CERENE — Dra. Romina Cioffi</div>
-          <div class="col-span-4 font-semibold text-slate-800">Psychiatric Prescription Visit (Desvenlafaxina &amp; Lorazepam).</div>
-          <div class="col-span-3 text-slate-600">Rx: Pristiq 100mg (30 comp) &amp; Trapax 2.5mg (60 comp).</div>
+          <div class="col-span-3 text-slate-500 font-medium">SGH — Cardiology OPD</div>
+          <div class="col-span-4 font-semibold text-slate-800">Acute Episode: Chest Pain &amp; Shortness of Breath. BP 150/95, HR 112 bpm.</div>
+          <div class="col-span-3 text-slate-600">Admitted for cardiac monitoring &amp; ECG evaluation.</div>
         </div>
       </div>
     </div>
@@ -239,17 +244,15 @@
 
   <!-- TAB 2: SCAN & EXTRACTION -->
   <section class="tab-panel hidden space-y-4" id="tab-2">
-    <!-- Header with Added "Scan Document" Action Button -->
+    <!-- Header with Action Button -->
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
         <h2 class="text-lg font-bold text-slate-900">Scan &amp; OCR Data Extraction</h2>
-        <p class="text-xs text-slate-500">Example: 2021-03-08 Prescription Note. Original image scan and extracted structured fields.</p>
+        <p class="text-xs text-slate-500">Example: 2021-03-08 Emergency Encounter Note. Original image scan and extracted structured fields.</p>
       </div>
       
-      <!-- Hidden Native File Input for Document Upload/Scanner Capture -->
       <input type="file" id="documentFileInput" accept="image/*,.pdf" class="hidden" onchange="handleDocumentScan(event)">
       
-      <!-- Trigger Button -->
       <button onclick="document.getElementById('documentFileInput').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition focus-ring flex items-center gap-2">
         <i data-lucide="scan-line" class="w-4 h-4"></i>
         <span>Scan New Document</span>
@@ -259,18 +262,17 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Document Preview / Image Section -->
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col items-center">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 w-full">Original Doctor's Note Scan</h3>
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 w-full">Original Clinical Encounter Note</h3>
         
-        <!-- Rendered Image -->
         <div class="relative w-full max-w-sm rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-2 shadow-inner">
           <img src="prescription.jpeg" 
-               alt="Doctor's Prescription Note" 
+               alt="Clinical Note" 
                class="w-full h-auto rounded-lg object-contain max-h-[480px]">
         </div>
 
         <div class="flex gap-4 mt-4 text-xs font-semibold text-slate-600 w-full justify-center">
           <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Patient Info</span>
-          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Prescriptions</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Clinical Vitals</span>
           <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Clinician Stamp</span>
         </div>
       </div>
@@ -280,27 +282,27 @@
         <div>
           <div class="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1">
             <span>OCR Confidence Rating</span>
-            <span class="mono font-bold text-blue-600">88%</span>
+            <span class="mono font-bold text-blue-600">92%</span>
           </div>
           <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-            <div class="h-full bg-blue-600 rounded-full" style="width: 88%;"></div>
+            <div class="h-full bg-blue-600 rounded-full" style="width: 92%;"></div>
           </div>
         </div>
 
         <div class="divide-y divide-slate-100 text-xs sm:text-sm">
-          <div class="py-2.5 flex justify-between"><span class="text-slate-500">Patient Name</span><span class="font-bold text-slate-800">Fernandez</span></div>
-          <div class="py-2.5 flex justify-between"><span class="text-slate-500">National ID (DNI)</span><span class="font-bold text-slate-800 mono">10.719.045</span></div>
+          <div class="py-2.5 flex justify-between"><span class="text-slate-500">Patient Name</span><span class="font-bold text-slate-800" id="ocrPatientName">Marcus Ibrahim</span></div>
+          <div class="py-2.5 flex justify-between"><span class="text-slate-500">National IC</span><span class="font-bold text-slate-800 mono" id="ocrPatientIC">660412-13-5891</span></div>
           <div class="py-2.5 flex justify-between">
-            <span class="text-slate-500">Prescription 1</span>
-            <span class="font-bold text-slate-800 text-right">Desvenlafaxina 100mg x 30 comp.<br><span class="text-xs text-blue-600 font-semibold">(Brand: Pristiq)</span></span>
+            <span class="text-slate-500">Primary Complaint</span>
+            <span class="font-bold text-red-600 text-right">Chest Pain &amp; Shortness of Breath</span>
           </div>
           <div class="py-2.5 flex justify-between">
-            <span class="text-slate-500">Prescription 2</span>
-            <span class="font-bold text-slate-800 text-right">Lorazepam 2.5mg x 60 comp.<br><span class="text-xs text-blue-600 font-semibold">(Brand: Trapax)</span></span>
+            <span class="text-slate-500">Vital Signs</span>
+            <span class="font-bold text-slate-800 text-right">BP 150/95 mmHg · HR 112 bpm</span>
           </div>
           <div class="py-2.5 flex justify-between">
             <span class="text-slate-500">Attending Physician</span>
-            <span class="font-bold text-slate-800 text-right">Dra. Romina Cioffi<br><span class="text-xs text-slate-500 font-normal">Psychiatry &amp; Medical Psychology</span></span>
+            <span class="font-bold text-slate-800 text-right">Dr. Romina Cioffi<br><span class="text-xs text-slate-500 font-normal">Cardiology &amp; Emergency Medicine</span></span>
           </div>
           <div class="py-2.5 flex justify-between"><span class="text-slate-500">Medical License (MP)</span><span class="font-bold text-slate-800 mono">115.117</span></div>
           <div class="py-2.5 flex justify-between"><span class="text-slate-500">Date Issued</span><span class="font-bold text-slate-800 mono">08 / 03 / 2021</span></div>
@@ -308,7 +310,7 @@
 
         <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-xs flex items-start gap-2">
           <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
-          <span><strong>1 field flagged for verification:</strong> Cursive handwriting on Lorazepam dosage unit ("2,5 gr" vs "2,5 mg") verified as 2.5 mg based on standard psychiatric dosing guidelines.</span>
+          <span><strong>1 field flagged for verification:</strong> Heart rate reading elevated (112 bpm). Cross-referenced with ED Triage logs.</span>
         </div>
       </div>
     </div>
@@ -323,17 +325,31 @@
 
     <!-- Active Problems -->
     <div class="space-y-3">
+      <div class="bg-white rounded-2xl border-l-4 border-l-red-500 border border-slate-200 p-4 shadow-sm flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Critical</span>
+            <h3 class="font-bold text-slate-900 text-base">Acute Chest Pain / Suspected Cardiac Event</h3>
+          </div>
+          <p class="text-xs text-slate-500">Presented with shortness of breath, pain scale 9/10, elevated blood pressure (150/95).</p>
+        </div>
+        <div class="text-right mono text-xs">
+          <span class="text-slate-400 block">Status</span>
+          <span class="font-bold text-red-600 text-sm">High Priority</span>
+        </div>
+      </div>
+
       <div class="bg-white rounded-2xl border-l-4 border-l-amber-500 border border-slate-200 p-4 shadow-sm flex items-center justify-between flex-wrap gap-3">
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Active</span>
-            <h3 class="font-bold text-slate-900 text-base">Major Depressive / Anxiety Disorder</h3>
+            <h3 class="font-bold text-slate-900 text-base">Type 2 Diabetes Mellitus</h3>
           </div>
-          <p class="text-xs text-slate-500">Managed by Dra. Romina Cioffi (CERENE). On Desvenlafaxine and Lorazepam therapy.</p>
+          <p class="text-xs text-slate-500">Diagnosed 2011. Managed with lifestyle and glycemic control monitoring.</p>
         </div>
         <div class="text-right mono text-xs">
-          <span class="text-slate-400 block">Status</span>
-          <span class="font-bold text-amber-600 text-sm">Under Treatment</span>
+          <span class="text-slate-400 block">HbA1c</span>
+          <span class="font-bold text-slate-900 text-sm">8.9% → 7.8%</span>
         </div>
       </div>
     </div>
@@ -346,17 +362,17 @@
       <div class="divide-y divide-slate-200 text-xs sm:text-sm">
         <div class="p-4 flex items-center justify-between">
           <div>
-            <span class="font-bold text-slate-900 block">Desvenlafaxina (Pristiq) 100mg</span>
-            <span class="text-xs text-slate-500">Oral, 30 Tablets</span>
+            <span class="font-bold text-slate-900 block">Aspirin 81mg</span>
+            <span class="text-xs text-slate-500">Oral, Daily</span>
           </div>
           <span class="mono text-xs text-slate-400">Prescribed 08-Mar-2021</span>
         </div>
         <div class="p-4 flex items-center justify-between">
           <div>
-            <span class="font-bold text-slate-900 block">Lorazepam (Trapax) 2.5mg</span>
-            <span class="text-xs text-slate-500">Oral, 60 Tablets</span>
+            <span class="font-bold text-slate-900 block">Metformin 500mg</span>
+            <span class="text-xs text-slate-500">Oral, Twice Daily</span>
           </div>
-          <span class="mono text-xs text-slate-400">Prescribed 08-Mar-2021</span>
+          <span class="mono text-xs text-slate-400">Prescribed 02-Jun-2011</span>
         </div>
       </div>
     </div>
@@ -377,7 +393,7 @@
       <i data-lucide="bot" class="w-5 h-5 text-blue-400"></i>
       <div>
         <h3 class="font-bold text-sm leading-tight">MedSync AI</h3>
-        <p class="mono text-[10px] text-slate-400">FERNANDEZ · DNI: 10.719.045</p>
+        <p class="mono text-[10px] text-slate-400" id="chatPatientMeta">MARCUS IBRAHIM · IC: 660412-13-5891</p>
       </div>
     </div>
     <button class="text-slate-400 hover:text-white transition" onclick="toggleChat(false)">
@@ -386,19 +402,19 @@
   </div>
 
   <div class="bg-blue-50 text-blue-800 text-[11px] mono px-4 py-2 border-b border-blue-100">
-    Grounded strictly in source prescription notes.
+    Grounded strictly in source medical notes.
   </div>
 
   <!-- Messages -->
   <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs sm:text-sm" id="chatBody">
-    <div class="bg-slate-100 text-slate-800 p-3 rounded-xl rounded-tl-none max-w-[85%]">
-      Ask me anything about Fernandez's prescription — medications, dosage, or attending doctor details.
+    <div class="bg-slate-100 text-slate-800 p-3 rounded-xl rounded-tl-none max-w-[85%]" id="chatWelcomeMsg">
+      Ask me anything about Marcus's medical record — symptoms, cardiac findings, or attending doctor details.
     </div>
   </div>
 
   <!-- Quick Chips -->
   <div class="px-4 py-2 flex flex-wrap gap-1.5 border-t border-slate-100 bg-slate-50" id="chatChips">
-    <button class="text-xs bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 font-semibold px-2.5 py-1 rounded-full transition" onclick="askPreset(this)">What medications are prescribed?</button>
+    <button class="text-xs bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 font-semibold px-2.5 py-1 rounded-full transition" onclick="askPreset(this)">Recent chest pain symptoms?</button>
     <button class="text-xs bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 font-semibold px-2.5 py-1 rounded-full transition" onclick="askPreset(this)">Who is the doctor?</button>
   </div>
 
@@ -414,26 +430,51 @@
 <script>
   lucide.createIcons();
 
+  /* ================= DYNAMIC PATIENT SESSION SYNC ================= */
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedPatient = localStorage.getItem('loggedInPatient');
+    if (savedPatient) {
+      try {
+        const patient = JSON.parse(savedPatient);
+        if (patient.name) {
+          const uppercaseName = patient.name.toUpperCase();
+          document.getElementById('patientBarName').textContent = uppercaseName;
+          document.getElementById('ocrPatientName').textContent = patient.name;
+          
+          if (patient.name.toLowerCase().includes('priya')) {
+            document.getElementById('patientBarMeta').textContent = 'IC: 970822-14-6042 · AGE: 27Y · F';
+            document.getElementById('ocrPatientIC').textContent = '970822-14-6042';
+            document.getElementById('chatPatientMeta').textContent = `${uppercaseName} · IC: 970822-14-6042`;
+            document.getElementById('chatWelcomeMsg').textContent = "Ask me anything about Priya's medical record — symptoms, joint sprain history, or attending doctor details.";
+          } else {
+            document.getElementById('patientBarMeta').textContent = 'IC: 660412-13-5891 · AGE: 58Y · M';
+            document.getElementById('ocrPatientIC').textContent = '660412-13-5891';
+            document.getElementById('chatPatientMeta').textContent = `${uppercaseName} · IC: 660412-13-5891`;
+          }
+        }
+      } catch (e) {
+        console.error('Error loading patient session for ReportSimplifier', e);
+      }
+    }
+  });
+
   /* ================= PDF EXPORT & PRINT ENGINE ================= */
   function exportToPDF() {
     const element = document.getElementById('exportableArea');
     
-    // Temporarily make all tabs visible so the full medical record is rendered into the PDF
     const hiddenPanels = document.querySelectorAll('.tab-panel.hidden');
     hiddenPanels.forEach(p => p.classList.remove('hidden'));
 
-    // Check if running on local file system vs web server to handle canvas security
     const isLocalFile = window.location.protocol === 'file:';
 
     const opt = {
       margin:       [0.4, 0.4, 0.4, 0.4],
-      filename:     'Fernandez_Medical_Summary.pdf',
+      filename:     'Patient_Medical_Summary.pdf',
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false, allowTaint: isLocalFile },
       jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    // Generate PDF and restore active tab view
     html2pdf().set(opt).from(element).save().then(() => {
       restoreActiveTabState();
     }).catch(err => {
@@ -443,13 +484,11 @@
   }
 
   function triggerPrintSummary() {
-    // Show all panels for full printed record
     const hiddenPanels = document.querySelectorAll('.tab-panel.hidden');
     hiddenPanels.forEach(p => p.classList.remove('hidden'));
 
     window.print();
 
-    // Re-hide non-active panels after print dialogue closes
     setTimeout(restoreActiveTabState, 500);
   }
 
@@ -465,7 +504,6 @@
     }
   }
 
-  // Handle Document Scanning Input Action
   function handleDocumentScan(event) {
     const file = event.target.files[0];
     if (file) {
@@ -488,8 +526,8 @@
 
   // Chat bot logic
   const CHAT_KB = [
-    { test:/medic|prescri|drug|pristiq|trapax/i, reply:"<b>Prescribed Medications:</b><br>1. <b>Desvenlafaxina (Pristiq) 100mg</b> — 30 tablets<br>2. <b>Lorazepam (Trapax) 2.5mg</b> — 60 tablets" },
-    { test:/doctor|physician|who|cioffi|license/i, reply:"<b>Attending Physician:</b><br>Dra. Romina Cioffi (Specialist in Psychiatry &amp; Medical Psychology, Directora Médica CERENE).<br>License MP: <b>115.117</b>" }
+    { test:/chest|pain|symptom|breath|cardiac/i, reply:"<b>Recent Encounter Summary:</b><br>Presented on 2021-03-08 with acute chest pain and shortness of breath (BP 150/95, HR 112 bpm). Admitted for cardiac monitoring." },
+    { test:/doctor|physician|who|cioffi|license/i, reply:"<b>Attending Physician:</b><br>Dr. Romina Cioffi (Cardiology &amp; Emergency Medicine).<br>License MP: <b>115.117</b>" }
   ];
 
   function toggleChat(open) {
@@ -538,7 +576,7 @@
       bMsg.className = 'bg-slate-100 text-slate-800 p-3 rounded-xl rounded-tl-none max-w-[85%] text-xs sm:text-sm';
       
       const match = CHAT_KB.find(k => k.test.test(text));
-      bMsg.innerHTML = match ? match.reply : "I couldn't find specific details on that in Fernandez's record. Try asking about medications or the doctor.";
+      bMsg.innerHTML = match ? match.reply : "I couldn't find specific details on that in the patient's record. Try asking about symptoms or the attending doctor.";
       
       body.appendChild(bMsg);
       body.scrollTop = body.scrollHeight;

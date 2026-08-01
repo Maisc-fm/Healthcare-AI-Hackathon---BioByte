@@ -91,14 +91,14 @@
             <i data-lucide="wand-2" class="w-3.5 h-3.5 text-blue-600"></i> Demo Quick-Fill:
           </div>
           <div class="flex flex-wrap gap-1.5">
+            <button type="button" id="demoDoc" class="focus-ring text-[11px] font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition">
+              Dr. Romina Cioffi (Doctor)
+            </button>
             <button type="button" id="demoMarcus" class="focus-ring text-[11px] font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition">
-              Marcus Ibrahim
+              Marcus Ibrahim (Patient)
             </button>
             <button type="button" id="demoPriya" class="focus-ring text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">
-              Priya Nandakumar
-            </button>
-            <button type="button" id="demoDoc" class="focus-ring text-[11px] font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition">
-              Dr. Romina Cioffi
+              Priya Nandakumar (Patient)
             </button>
           </div>
         </div>
@@ -120,10 +120,10 @@
           <!-- IC / ID Field -->
           <div>
             <label for="icNumber" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-              Patient's Identity Card (IC) / NRIC
+              Patient's Identity Card (IC) / NRIC <span class="text-slate-400 font-normal">(Optional for Doctor)</span>
             </label>
             <div class="relative">
-              <input id="icNumber" type="text" required placeholder="e.g. 660412-13-5891"
+              <input id="icNumber" type="text" placeholder="e.g. 660412-13-5891"
                 class="focus-ring w-full rounded-xl border border-slate-300 px-4 py-3 pl-11 text-sm outline-none focus:border-blue-600 transition mono" />
               <i data-lucide="id-card" class="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5"></i>
             </div>
@@ -167,6 +167,15 @@ lucide.createIcons();
 let activePatientData = null;
 
 /* ---------------- Demo Quick-Fill Event Handlers ---------------- */
+document.getElementById('demoDoc').addEventListener('click', () => {
+  document.getElementById('doctorId').value = 'DOC-115117';
+  document.getElementById('icNumber').value = ''; // Doctor log-in leaves patient IC empty
+  document.getElementById('adminPin').value = '88888888';
+
+  // Explicitly clear any patient autofill state
+  activePatientData = null;
+});
+
 document.getElementById('demoMarcus').addEventListener('click', () => {
   document.getElementById('doctorId').value = 'DOC-115117';
   document.getElementById('icNumber').value = '660412-13-5891'; // Marcus Ibrahim IC
@@ -191,31 +200,14 @@ document.getElementById('demoPriya').addEventListener('click', () => {
   };
 });
 
-document.getElementById('demoDoc').addEventListener('click', () => {
-  document.getElementById('doctorId').value = 'DOC-115117';
-  document.getElementById('icNumber').value = '800512-10-5124';
-  document.getElementById('adminPin').value = '88888888';
-
-  activePatientData = {
-    name: 'Dr. Romina Cioffi',
-    age: 42,
-    contact: '555-010-9922'
-  };
-});
-
 function handleLogin(event) {
   event.preventDefault();
   
-  // If demo patient data exists, save it to localStorage for TriageAI to pick up
+  // If logging in as a patient, store demographics; otherwise remove cached patient state
   if (activePatientData) {
     localStorage.setItem('loggedInPatient', JSON.stringify(activePatientData));
   } else {
-    // Default fallback if filled manually
-    localStorage.setItem('loggedInPatient', JSON.stringify({
-      name: 'Marcus Ibrahim',
-      age: 58,
-      contact: '555-019-2231'
-    }));
+    localStorage.removeItem('loggedInPatient');
   }
 
   // Navigates directly to the main dashboard page
