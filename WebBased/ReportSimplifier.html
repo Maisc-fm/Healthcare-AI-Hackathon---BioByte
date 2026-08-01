@@ -7,6 +7,8 @@
 <!-- Tailwind CSS & Lucide Icons -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<!-- html2pdf.js library for PDF exporting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <!-- TriageAI Typography Imports -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
@@ -73,6 +75,34 @@
   .typing-dots span:nth-child(2) { animation-delay: .2s; }
   .typing-dots span:nth-child(3) { animation-delay: .4s; }
   @keyframes blink { 0%,80%,100% { opacity: .3; } 40% { opacity: 1; } }
+
+  /* ================= PRINT STYLES ================= */
+  @media print {
+    /* Hide non-printable web controls */
+    header, .ekg-track, .tab-nav, #chatFab, #chatPanel, button, a[href="page1.html"] {
+      display: none !important;
+    }
+    
+    body {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+    }
+
+    /* Force visibility of all panels during printing */
+    .tab-panel {
+      display: block !important;
+      margin-bottom: 2rem;
+      page-break-inside: avoid;
+    }
+
+    .shadow-sm, .shadow-2xl, .shadow-lg {
+      box-shadow: none !important;
+    }
+
+    .border {
+      border-color: #cbd5e1 !important;
+    }
+  }
 </style>
 </head>
 <body class="min-h-screen text-slate-800 flex flex-col justify-between">
@@ -102,7 +132,7 @@
   </div>
   
   <!-- EKG Accent Line -->
-  <div class="ekg-track w-full h-2 bg-slate-900">
+  <div class="ekg-track w-full h-6 bg-slate-900">
     <svg viewBox="0 0 1400 40" preserveAspectRatio="none" class="w-full h-full">
       <polyline class="ekg-line" fill="none" stroke="#34d399" stroke-width="3"
         points="0,20 60,20 80,20 95,4 110,36 125,20 160,20 220,20 240,20 255,4 270,36 285,20 320,20
@@ -123,12 +153,14 @@
         <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> PENICILLIN (RASH)
       </span>
     </div>
+
+    <!-- ACTION BUTTONS -->
     <div class="flex items-center gap-2">
-      <button class="text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition">
-        Export PDF
+      <button onclick="exportToPDF()" class="text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white border border-blue-500 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 focus-ring">
+        <i data-lucide="download" class="w-3.5 h-3.5"></i> Export PDF
       </button>
-      <button class="text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition">
-        Print Summary
+      <button onclick="triggerPrintSummary()" class="text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 focus-ring">
+        <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print Summary
       </button>
     </div>
   </div>
@@ -141,7 +173,7 @@
 </div>
 
 <!-- ============ NAVIGATION TABS ============ -->
-<div class="bg-white border-b border-slate-200 sticky top-[65px] z-30">
+<div class="bg-white border-b border-slate-200 sticky top-[65px] z-30 tab-nav">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 flex gap-2">
     <button class="tab-btn active px-4 py-3 text-xs sm:text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-900 transition flex items-center gap-2" data-tab="1">
       <span class="mono text-xs opacity-60">01</span> Compiled Report
@@ -155,8 +187,8 @@
   </div>
 </div>
 
-<!-- ============ MAIN CONTENT ============ -->
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+<!-- ============ MAIN CONTENT CONTAINER (TARGETED FOR PDF EXPORT) ============ -->
+<main id="exportableArea" class="max-w-7xl mx-auto px-4 sm:px-6 py-8 bg-white">
 
   <!-- TAB 1: COMPILED REPORT -->
   <section class="tab-panel space-y-4" id="tab-1">
@@ -382,12 +414,62 @@
 <script>
   lucide.createIcons();
 
+  /* ================= PDF EXPORT & PRINT ENGINE ================= */
+  function exportToPDF() {
+    const element = document.getElementById('exportableArea');
+    
+    // Temporarily make all tabs visible so the full medical record is rendered into the PDF
+    const hiddenPanels = document.querySelectorAll('.tab-panel.hidden');
+    hiddenPanels.forEach(p => p.classList.remove('hidden'));
+
+    // Check if running on local file system vs web server to handle canvas security
+    const isLocalFile = window.location.protocol === 'file:';
+
+    const opt = {
+      margin:       [0.4, 0.4, 0.4, 0.4],
+      filename:     'Fernandez_Medical_Summary.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false, allowTaint: isLocalFile },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    // Generate PDF and restore active tab view
+    html2pdf().set(opt).from(element).save().then(() => {
+      restoreActiveTabState();
+    }).catch(err => {
+      console.warn("Standard canvas export fallback engaged:", err);
+      restoreActiveTabState();
+    });
+  }
+
+  function triggerPrintSummary() {
+    // Show all panels for full printed record
+    const hiddenPanels = document.querySelectorAll('.tab-panel.hidden');
+    hiddenPanels.forEach(p => p.classList.remove('hidden'));
+
+    window.print();
+
+    // Re-hide non-active panels after print dialogue closes
+    setTimeout(restoreActiveTabState, 500);
+  }
+
+  function restoreActiveTabState() {
+    const activeTab = document.querySelector('.tab-btn.active');
+    if (activeTab) {
+      const activeTabId = activeTab.dataset.tab;
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        if (panel.id !== 'tab-' + activeTabId) {
+          panel.classList.add('hidden');
+        }
+      });
+    }
+  }
+
   // Handle Document Scanning Input Action
   function handleDocumentScan(event) {
     const file = event.target.files[0];
     if (file) {
       alert(`Document selected: ${file.name}\nInitiating MedSync AI OCR extraction process...`);
-      // Ready for hooking up to backend scanning/OCR API processing pipeline
     }
   }
 

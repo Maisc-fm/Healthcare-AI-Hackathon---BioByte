@@ -53,9 +53,16 @@
       </div>
     </div>
     
-    <div class="flex items-center gap-1.5 text-slate-500 text-xs mono">
-      <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-      <span id="clockDisplay">--:--:--</span>
+    <div class="flex items-center gap-4">
+      <div class="hidden sm:flex items-center gap-1.5 text-slate-500 text-xs mono border-r border-slate-200 pr-4">
+        <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+        <span id="clockDisplay">--:--:--</span>
+      </div>
+
+      <!-- LOG OUT BUTTON -->
+      <a href="login.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition focus-ring flex items-center gap-1.5">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Log Out
+      </a>
     </div>
   </div>
 </header>
