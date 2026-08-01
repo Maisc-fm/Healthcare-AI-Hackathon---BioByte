@@ -96,7 +96,7 @@
         <i data-lucide="activity" class="w-5 h-5 text-white"></i>
       </div>
       <div class="leading-tight">
-        <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-900">MedSync <span class="text-blue-600">AI</span></h1>
+        <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-900">TriageFlow <span class="text-blue-600">AI</span></h1>
         <p class="text-[11px] sm:text-xs text-slate-500 -mt-0.5">Emergency Department Triage &amp; Wait-Time Estimator</p>
       </div>
     </div>
@@ -110,8 +110,7 @@
         <i data-lucide="clock" class="w-3.5 h-3.5"></i>
         <span id="clockDisplay">--:--:--</span>
       </div>
-    </div>
-      <!-- ADD THIS BUTTON HERE -->
+
       <a href="page1.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition focus-ring">
         ← Back to Dashboard
       </a>
@@ -140,7 +139,7 @@
           Patient Self Check-in
         </h2>
       </div>
-      <p class="text-sm text-slate-500 mb-4">Fill in the details below. Fields marked optional help refine your priority score but aren't required to check in.</p>
+      <p class="text-sm text-slate-500 mb-4">Fill in the details below. Select all symptoms that apply to help refine your priority score.</p>
 
       <!-- Demo quick-fill -->
       <div class="flex flex-wrap gap-2 mb-5 p-3 rounded-xl bg-slate-50 border border-dashed border-slate-300">
@@ -177,13 +176,22 @@
           </div>
         </div>
 
-        <!-- Chief Complaint -->
+        <!-- Chief Complaint (Multi-Select) -->
         <div>
-          <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Chief Complaint</h3>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Chief Complaints</h3>
+            <span class="text-[11px] text-slate-400">Select all that apply</span>
+          </div>
           <div id="complaintPills" class="flex flex-wrap gap-2" role="group" aria-label="Chief complaint selection">
             <!-- injected by JS -->
           </div>
-          <input type="hidden" id="chiefComplaint" value="" />
+
+          <!-- Custom text field for "Other" -->
+          <div id="otherComplaintContainer" class="hidden mt-3 fade-in">
+            <label for="otherComplaintText" class="block text-xs font-medium text-slate-600 mb-1">Specify Other Symptoms</label>
+            <input id="otherComplaintText" type="text" placeholder="e.g. Severe migraine, allergic reaction..."
+              class="focus-ring w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+          </div>
         </div>
 
         <!-- Vitals -->
@@ -223,6 +231,9 @@
             <option value="lt1">Less than 1 hour</option>
             <option value="1to6">1 – 6 hours</option>
             <option value="24plus">24+ hours</option>
+            <option value="3daysPlus">3+ days</option>
+            <option value="2weeksPlus">2+ weeks</option>
+            <option value="1monthPlus">1+ month</option>
           </select>
         </div>
 
@@ -332,15 +343,21 @@ setInterval(updateClock, 1000);
 /* ---------------- Chief Complaint Pills ---------------- */
 const complaints = [
   { id: 'chest_pain', label: 'Chest Pain', icon: 'heart-crack' },
-  { id: 'minor_cut', label: 'Minor Cut', icon: 'bandage' },
-  { id: 'fever', label: 'Fever', icon: 'thermometer' },
-  { id: 'abdominal_pain', label: 'Abdominal Pain', icon: 'zap' },
-  { id: 'joint_sprain', label: 'Joint Sprain', icon: 'bone' },
   { id: 'shortness_of_breath', label: 'Shortness of Breath', icon: 'wind' },
+  { id: 'epilepsy', label: 'Epilepsy / Seizure', icon: 'activity' },
+  { id: 'abdominal_pain', label: 'Abdominal Pain', icon: 'zap' },
+  { id: 'infection', label: 'Infection', icon: 'bug' },
+  { id: 'fever', label: 'Fever', icon: 'thermometer' },
+  { id: 'fatigue', label: 'Fatigue', icon: 'battery-low' },
+  { id: 'joint_sprain', label: 'Joint Sprain', icon: 'bone' },
+  { id: 'minor_cut', label: 'Minor Cut', icon: 'bandage' },
+  { id: 'other', label: 'Other', icon: 'edit-3' },
 ];
 
+const selectedComplaints = new Set();
 const complaintPillsWrap = document.getElementById('complaintPills');
-const chiefComplaintInput = document.getElementById('chiefComplaint');
+const otherContainer = document.getElementById('otherComplaintContainer');
+const otherInput = document.getElementById('otherComplaintText');
 
 complaints.forEach(c => {
   const btn = document.createElement('button');
@@ -349,18 +366,25 @@ complaints.forEach(c => {
   btn.setAttribute('aria-pressed', 'false');
   btn.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600';
   btn.innerHTML = `<i data-lucide="${c.icon}" class="w-3.5 h-3.5"></i><span>${c.label}</span>`;
+  
   btn.addEventListener('click', () => {
-    const isSelected = chiefComplaintInput.value === c.id;
-    document.querySelectorAll('#complaintPills button').forEach(b => {
-      b.setAttribute('aria-pressed', 'false');
-      b.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600';
-    });
-    if (!isSelected) {
+    if (selectedComplaints.has(c.id)) {
+      // Unselect
+      selectedComplaints.delete(c.id);
+      btn.setAttribute('aria-pressed', 'false');
+      btn.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600';
+      if (c.id === 'other') {
+        otherContainer.classList.add('hidden');
+      }
+    } else {
+      // Select
+      selectedComplaints.add(c.id);
       btn.setAttribute('aria-pressed', 'true');
       btn.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-blue-600 bg-blue-600 text-white shadow-sm';
-      chiefComplaintInput.value = c.id;
-    } else {
-      chiefComplaintInput.value = '';
+      if (c.id === 'other') {
+        otherContainer.classList.remove('hidden');
+        otherInput.focus();
+      }
     }
   });
   complaintPillsWrap.appendChild(btn);
@@ -375,16 +399,27 @@ painScale.addEventListener('input', () => {
 });
 
 /* ---------------- Demo Quick-fill ---------------- */
+function clearSelectedComplaints() {
+  selectedComplaints.clear();
+  document.querySelectorAll('#complaintPills button').forEach(b => {
+    b.setAttribute('aria-pressed', 'false');
+    b.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600';
+  });
+  otherContainer.classList.add('hidden');
+}
+
 function selectComplaintById(id){
   const btn = document.querySelector(`#complaintPills button[data-value="${id}"]`);
-  if (btn) btn.click();
+  if (btn && !selectedComplaints.has(id)) btn.click();
 }
 
 document.getElementById('demoChestPain').addEventListener('click', () => {
+  clearSelectedComplaints();
   document.getElementById('patientName').value = 'Marcus Ibrahim';
   document.getElementById('patientAge').value = 58;
   document.getElementById('emergencyContact').value = '555-019-2231';
   selectComplaintById('chest_pain');
+  selectComplaintById('shortness_of_breath');
   document.getElementById('heartRate').value = 112;
   document.getElementById('bloodPressure').value = '150/95';
   painScale.value = 9;
@@ -394,6 +429,7 @@ document.getElementById('demoChestPain').addEventListener('click', () => {
 });
 
 document.getElementById('demoMinorInjury').addEventListener('click', () => {
+  clearSelectedComplaints();
   document.getElementById('patientName').value = 'Priya Nandakumar';
   document.getElementById('patientAge').value = 27;
   document.getElementById('emergencyContact').value = '555-044-7789';
@@ -418,94 +454,87 @@ const ESI_CONFIG = {
 const ESI_ICON = { 1:'siren', 2:'alert-triangle', 3:'clock-alert', 4:'circle-check', 5:'smile' };
 
 /* ---------------- Triage Rule Engine ---------------- */
-function evaluateTriage({ complaint, painScaleVal, heartRateVal, duration }){
-  const hasComplaint = c => complaint === c;
+function evaluateTriage({ selectedSet, customComplaint, painScaleVal, heartRateVal, duration }){
+  const has = c => selectedSet.has(c);
 
-  // ESI 1 — Immediate
-  if ((hasComplaint('chest_pain') && painScaleVal > 7) || hasComplaint('shortness_of_breath')) {
-    const reason = hasComplaint('shortness_of_breath')
-      ? 'Shortness of breath was reported. Airway and breathing compromise is treated as an immediate life threat and bypasses the standard queue.'
-      : `Chest pain with a self-reported pain score of ${painScaleVal}/10 was reported. High-acuity cardiac presentations are treated as an immediate life threat and bypass the standard queue.`;
+  // ESI 1 — Immediate Life Threat
+  if (has('epilepsy') || has('shortness_of_breath') || (has('chest_pain') && painScaleVal > 7)) {
+    let reason = '';
+    if (has('epilepsy')) {
+      reason = 'Seizure activity or epilepsy presentation requires immediate neurological stabilization and life-support monitoring.';
+    } else if (has('shortness_of_breath')) {
+      reason = 'Shortness of breath was reported. Airway and breathing compromise is treated as an immediate life threat and bypasses the standard queue.';
+    } else {
+      reason = `Chest pain with a high pain score of ${painScaleVal}/10 was reported. Severe cardiac symptoms bypass standard waiting procedures.`;
+    }
     return { esi: 1, waitMin: 0, waitMax: 0, reason };
   }
 
-  // ESI 2 — Emergent
+  // ESI 2 — Emergent / High Risk
   const highHeartRate = heartRateVal !== null && heartRateVal >= 100;
-  if (hasComplaint('abdominal_pain') && painScaleVal >= 6 && highHeartRate) {
+  if (has('chest_pain') || (has('abdominal_pain') && painScaleVal >= 6)) {
     return {
       esi: 2, waitMin: 10, waitMax: 20,
-      reason: `Severe abdominal pain (${painScaleVal}/10) combined with an elevated heart rate (${heartRateVal} bpm) suggests a potentially serious underlying condition. High-acuity cases are prioritized over non-emergent visits to ensure patient safety.`
+      reason: `High-acuity symptoms reported (${getLabelsArray(selectedSet, customComplaint).join(', ')}). High-risk presentations are prioritized immediately over lower-acuity visits.`
     };
   }
-  if (hasComplaint('abdominal_pain') && painScaleVal >= 6) {
+  if (has('infection') && (highHeartRate || painScaleVal >= 6)) {
     return {
       esi: 2, waitMin: 10, waitMax: 25,
-      reason: `Severe abdominal pain (${painScaleVal}/10) was reported. This is treated as high-acuity and prioritized ahead of non-emergent visits, pending a full vitals check.`
+      reason: 'Infection symptoms combined with elevated physiological markers (heart rate or pain) indicate high risk for systemic complications requiring urgent evaluation.'
     };
   }
 
   // ESI 3 — Urgent
-  const highFever = hasComplaint('fever');
-  const moderatePain = painScaleVal >= 4 && painScaleVal <= 7;
-  if (highFever && moderatePain) {
+  if (has('fever') || has('infection') || has('abdominal_pain') || (painScaleVal >= 4 && painScaleVal <= 7)) {
     return {
       esi: 3, waitMin: 30, waitMax: 60,
-      reason: `A fever combined with moderate reported pain (${painScaleVal}/10) indicates a condition that needs prompt evaluation, but does not show signs of immediate life threat.`
-    };
-  }
-  if (highFever) {
-    return {
-      esi: 3, waitMin: 30, waitMax: 60,
-      reason: `Fever was reported as the chief complaint. This is treated as urgent and scheduled ahead of non-urgent visits.`
-    };
-  }
-  if (hasComplaint('abdominal_pain')) {
-    return {
-      esi: 3, waitMin: 30, waitMax: 55,
-      reason: `Abdominal pain was reported at a moderate level (${painScaleVal}/10). This warrants a timely evaluation without immediate life-threat indicators.`
-    };
-  }
-  if (moderatePain && duration === 'lt1') {
-    return {
-      esi: 3, waitMin: 30, waitMax: 60,
-      reason: `A moderate pain score of ${painScaleVal}/10 with symptom onset under an hour warrants a timely evaluation.`
+      reason: `Selected complaints (${getLabelsArray(selectedSet, customComplaint).join(', ')}) require prompt diagnostic evaluation and intervention, but show no immediate life threat.`
     };
   }
 
-  // ESI 4/5 — Non-Urgent
-  if (hasComplaint('minor_cut') || hasComplaint('joint_sprain')) {
+  // ESI 4/5 — Non-Urgent / Less Urgent
+  if (has('fatigue') || has('minor_cut') || has('joint_sprain')) {
     const esiLevel = painScaleVal <= 3 ? 5 : 4;
     return {
       esi: esiLevel, waitMin: 60, waitMax: 90,
-      reason: `${complaintLabel(complaint)} with a low reported pain score (${painScaleVal}/10) is classified as non-urgent. These cases are seen after all higher-acuity patients have been addressed.`
+      reason: `Symptoms (${getLabelsArray(selectedSet, customComplaint).join(', ')}) with low pain severity (${painScaleVal}/10) are classified as non-urgent. Patients will be evaluated after high-acuity cases.`
     };
   }
 
-  // Fallback for any remaining combination
+  // Fallback for custom or unhandled complaints
   if (painScaleVal >= 8) {
     return {
       esi: 2, waitMin: 10, waitMax: 25,
-      reason: `A high self-reported pain score (${painScaleVal}/10) was recorded for "${complaintLabel(complaint) || 'an unspecified complaint'}". This is treated as emergent pending clinical review.`
+      reason: `High reported pain score (${painScaleVal}/10) for symptoms (${getLabelsArray(selectedSet, customComplaint).join(', ')}). Assigned emergent status pending triage nurse review.`
     };
   }
   if (painScaleVal >= 4) {
     return {
       esi: 3, waitMin: 30, waitMax: 60,
-      reason: `A moderate pain score (${painScaleVal}/10) was recorded for "${complaintLabel(complaint) || 'an unspecified complaint'}". This warrants a timely, non-immediate evaluation.`
+      reason: `Moderate pain score (${painScaleVal}/10) recorded. Warrants a timely evaluation.`
     };
   }
   return {
     esi: 5, waitMin: 60, waitMax: 90,
-    reason: `No high-acuity indicators were identified for "${complaintLabel(complaint) || 'this complaint'}" based on the information provided. This is classified as non-urgent.`
+    reason: `No high-acuity indicators identified for symptoms (${getLabelsArray(selectedSet, customComplaint).join(', ')}). Classified as non-urgent.`
   };
 }
 
-function complaintLabel(id){
-  const found = complaints.find(c => c.id === id);
-  return found ? found.label : '';
+function getLabelsArray(selectedSet, customText = '') {
+  const labels = [];
+  selectedSet.forEach(id => {
+    if (id === 'other') {
+      labels.push(customText.trim() ? customText.trim() : 'Unspecified complaint');
+    } else {
+      const found = complaints.find(c => c.id === id);
+      if (found) labels.push(found.label);
+    }
+  });
+  return labels;
 }
 
-/* ---------------- Queue Graph (simulated live load) ---------------- */
+/* ---------------- Queue Graph ---------------- */
 function renderQueueGraph(highlightEsi){
   const loads = { 1: 1, 2: 3, 3: 7, 4: 5, 5: 4 };
   const maxLoad = Math.max(...Object.values(loads));
@@ -542,18 +571,24 @@ form.addEventListener('submit', (e) => {
   e.preventDefault();
 
   const name = document.getElementById('patientName').value.trim() || 'Patient';
-  const complaint = chiefComplaintInput.value;
+  const customComplaint = otherInput.value.trim();
   const painScaleVal = parseInt(painScale.value, 10) || 0;
   const heartRateRaw = document.getElementById('heartRate').value;
   const heartRateVal = heartRateRaw ? parseInt(heartRateRaw, 10) : null;
   const duration = document.getElementById('symptomDuration').value;
 
-  if (!complaint){
-    alert('Please select a chief complaint before evaluating.');
+  if (selectedComplaints.size === 0){
+    alert('Please select at least one chief complaint before evaluating.');
     return;
   }
 
-  const result = evaluateTriage({ complaint, painScaleVal, heartRateVal, duration });
+  if (selectedComplaints.has('other') && !customComplaint) {
+    alert('Please specify your other symptoms in the text box provided.');
+    otherInput.focus();
+    return;
+  }
+
+  const result = evaluateTriage({ selectedSet: selectedComplaints, customComplaint, painScaleVal, heartRateVal, duration });
   renderResults(name, result);
 
   placeholderState.classList.add('hidden');
