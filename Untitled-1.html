@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TriageFlow AI - ED Patient Triage & Wait-Time Estimator</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .fade-in {
+      animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .pulse-ring {
+      animation: pulseRing 2s infinite;
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 antialiased flex flex-col">
+
+  <!-- Header Bar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 p-2 rounded-lg text-white">
+          <i data-lucide="activity" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-xl font-bold text-slate-900 tracking-tight">TriageFlow <span class="text-blue-600">AI</span></span>
+          <span class="hidden md:inline-block ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Sarawak ED Assistant</span>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-3 text-sm">
+        <!-- Language Selector -->
+        <div class="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+          <i data-lucide="globe" class="w-4 h-4 text-slate-500 ml-1"></i>
+          <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer pr-1">
+            <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
+            <option value="zh">华语 (Chinese)</option>
+            <option value="iban">Bahasa Iban</option>
+            <option value="bidayuh_biatah">Bidayuh (Biatah)</option>
+            <option value="bidayuh_bau">Bidayuh (Bau/Jagoi)</option>
+          </select>
+        </div>
+
+        <div class="hidden sm:flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full text-emerald-700">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="txt-clinicStatus" class="font-medium text-xs sm:text-sm">Clinic Status: Normal Capacity</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- LEFT COLUMN: Patient Self-Check-in Form -->
+      <section class="lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+        <!-- Card Header & Demo Buttons -->
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50">
+          <div class="flex items-center justify-between mb-3">
+            <h2 id="txt-intakeHeader" class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="clipboard-edit" class="w-5 h-5 text-blue-600"></i>
+              Patient Intake Check-in
+            </h2>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Step 1 of 2</span>
+          </div>
+          
+          <!-- Pitch Quick-Fill Controls -->
+          <div class="bg-blue-50/60 border border-blue-100 p-3 rounded-lg">
+            <p class="text-xs font-medium text-blue-800 mb-2 flex items-center gap-1">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-600"></i>
+              <span id="txt-demoTitle">Judge Pitch Demo Quick-Fills:</span>
+            </p>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="loadDemoData('chest_pain')" class="px-2.5 py-1.5 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-medium transition flex items-center justify-center gap-1 shadow-2xs">
+                <i data-lucide="heart-pulse" class="w-3.5 h-3.5 text-red-500"></i>
+                <span id="txt-demoChest">Chest Pain (ESI 1)</span>
+              </button>
+              <button type="button" onclick="loadDemoData('minor_injury')" class="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded text-xs font-medium transition flex items-center justify-center gap-1 shadow-2xs">
+                <i data-lucide="bandaid" class="w-3.5 h-3.5 text-emerald-500"></i>
+                <span id="txt-demoCut">Minor Cut (ESI 4)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Body -->
+        <form id="triageForm" onsubmit="handleTriageSubmit(event)" class="p-6 space-y-5 flex-1 flex flex-col justify-between">
+          <div class="space-y-5">
+            <!-- 1. Demographics -->
+            <div>
+              <label id="txt-labelDemo" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">1. Patient Demographics</label>
+              <div class="grid grid-cols-3 gap-3">
+                <div class="col-span-2">
+                  <input type="text" id="patientName" required placeholder="Full Name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+                <div>
+                  <input type="number" id="patientAge" required min="1" max="120" placeholder="Age" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+              </div>
+              <input type="tel" id="emergencyContact" placeholder="Emergency Contact Phone" class="w-full mt-2.5 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+            </div>
+
+            <!-- 2. Chief Complaint -->
+            <div>
+              <label id="txt-labelSymptom" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">2. Chief Complaint / Primary Symptom</label>
+              <div class="grid grid-cols-2 gap-2" id="symptomPills">
+                <button type="button" onclick="selectSymptom('Chest Pain')" class="symptom-btn p-2.5 text-xs font-medium border border-slate-200 rounded-lg text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition text-left flex items-center gap-2">
+                  <i data-lucide="heart" class="w-4 h-4 text-red-500"></i>
+                  <span id="sym-chest">Chest Pain</span>
+                </button>
+                <button type="button" onclick="selectSymptom('Shortness of Breath')" class="symptom-btn p-2.5 text-xs font-medium border border-slate-200 rounded-lg text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition text-left flex items-center gap-2">
+                  <i data-lucide="wind" class="w-4 h-4 text-sky-500"></i>
+                  <span id="sym-breath">Shortness of Breath</span>
+                </button>
+                <button type="button" onclick="selectSymptom('Abdominal Pain')" class="symptom-btn p-2.5 text-xs font-medium border border-slate-200 rounded-lg text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition text-left flex items-center gap-2">
+                  <i data-lucide="activity" class="w-4 h-4 text-amber-500"></i>
+                  <span id="sym-stomach">Abdominal Pain</span>
+                </button>
+                <button type="button" onclick="selectSymptom('Fever')" class="symptom-btn p-2.5 text-xs font-medium border border-slate-200 rounded-lg text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition text-left flex items-center gap-2">
+                  <i data-lucide="thermometer" class="w-4 h-4 text-orange-500"></i>
+                  <span id="sym-fever">High Fever</span>
+                </button>
+                <button type="button" onclick="selectSymptom('Joint Sprain')" class="symptom-btn p-2.5 text-xs font-medium border border-slate-200 rounded-lg text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition text-left flex items-center gap-2">
+                  <i data-lucide="bone" class="w-4 h-4 text-slate-500"></i>
+                  <span id="sym-sprain">Joint Sprain</span>
+                </button>
+                <button type="button" onclick="selectSymptom('Minor Cut')" class="symptom-btn p-2.5 text-xs font-medium border border-slate-200 rounded-lg text-slate-700 hover:border-blue-300 hover:bg-blue-50/50 transition text-left flex items-center gap-2">
+                  <i data-lucide="scissors" class="w-4 h-4 text-emerald-500"></i>
+                  <span id="sym-cut">Minor Cut</span>
+                </button>
+              </div>
+              <input type="hidden" id="selectedSymptom" required>
+            </div>
+
+            <!-- 3. Vitals & Pain -->
+            <div>
+              <label id="txt-labelVitals" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">3. Vital Signs & Pain Scale</label>
+              
+              <!-- Pain Slider -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-3">
+                <div class="flex justify-between items-center mb-1">
+                  <span id="txt-painTitle" class="text-xs font-medium text-slate-700">Pain Severity (1-10):</span>
+                  <span id="painDisplay" class="text-sm font-bold text-blue-600">5 / 10</span>
+                </div>
+                <input type="range" id="painScale" min="1" max="10" value="5" oninput="updatePainDisplay(this.value)" class="w-full accent-blue-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1 font-medium">
+                  <span id="txt-painMild">Mild (1)</span>
+                  <span id="txt-painMod">Moderate (5)</span>
+                  <span id="txt-painSev">Severe (10)</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label id="txt-hrLabel" class="block text-[11px] font-medium text-slate-500 mb-1">Heart Rate (bpm)</label>
+                  <input type="number" id="heartRate" placeholder="e.g. 78" min="30" max="220" class="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                  <label id="txt-bpLabel" class="block text-[11px] font-medium text-slate-500 mb-1">Blood Pressure</label>
+                  <input type="text" id="bloodPressure" placeholder="e.g. 120/80" class="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Duration -->
+            <div>
+              <label id="txt-labelDuration" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">4. Symptom Duration</label>
+              <select id="symptomDuration" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-white">
+                <option value="<1hr" id="dur-opt1">Less than 1 hour (Sudden onset)</option>
+                <option value="1-6hrs" selected id="dur-opt2">1 to 6 hours</option>
+                <option value="24hrs+" id="dur-opt3">24+ hours (Gradual / Persistent)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 5. Submit Button -->
+          <div class="pt-4 border-t border-slate-100">
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 group">
+              <span id="txt-btnSubmit">Evaluate Triage Level & Wait Time</span>
+              <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- RIGHT COLUMN: Real-Time Dashboard & Analytics -->
+      <section class="lg:col-span-7 flex flex-col space-y-6">
+        
+        <!-- PLACEHOLDER STATE -->
+        <div id="placeholderState" class="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center flex-1 flex flex-col items-center justify-center min-h-[500px]">
+          <div class="bg-blue-50 p-4 rounded-full text-blue-500 mb-4">
+            <i data-lucide="shield-alert" class="w-12 h-12"></i>
+          </div>
+          <h3 id="txt-phTitle" class="text-xl font-bold text-slate-800 mb-2">Awaiting Intake Data</h3>
+          <p id="txt-phDesc" class="text-slate-500 text-sm max-w-md mx-auto mb-6">
+            Fill out the patient self-check-in form on the left or click a demo quick-fill button to evaluate emergency severity and view real-time queue analytics.
+          </p>
+          <div class="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-full">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span id="txt-phTag">Triage Algorithm Ready (ESI Standard 1-5)</span>
+          </div>
+        </div>
+
+        <!-- ACTIVE DASHBOARD STATE -->
+        <div id="activeDashboard" class="hidden space-y-6 fade-in">
+          
+          <!-- 1. Triage Status Banner -->
+          <div id="esiBanner" class="p-6 rounded-xl border shadow-sm text-white transition-colors relative overflow-hidden">
+            <div class="flex items-start justify-between relative z-10">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span id="esiBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/20">ESI Level 1</span>
+                  <span id="esiCategory" class="text-xs font-medium text-white/80">Immediate Resuscitation</span>
+                </div>
+                <h3 id="esiTitle" class="text-2xl font-extrabold tracking-tight">Critical Emergency</h3>
+                <p id="patientMeta" class="text-sm text-white/90 mt-1 font-medium">Patient: John Doe (Age 45)</p>
+              </div>
+              <div id="esiIconBox" class="p-3 bg-white/10 rounded-xl">
+                <i data-lucide="alert-triangle" class="w-8 h-8 text-white"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Estimated Wait Time Badge -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <span id="txt-labelWait" class="text-xs font-bold uppercase text-slate-400 tracking-wider">Estimated Care Time</span>
+                <div class="flex items-baseline gap-2">
+                  <span id="waitTimeDisplay" class="text-3xl font-extrabold text-slate-900">0 mins</span>
+                  <span id="txt-bedNote" class="text-xs font-medium text-slate-500">(Immediate Bed Placement)</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span id="txt-labelPos" class="text-xs text-slate-400 block font-medium">Queue Position</span>
+                <span id="queuePosition" class="text-lg font-bold text-slate-800">#1 Next in Line</span>
+              </div>
+            </div>
+
+            <!-- Animated Progress Bar -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs text-slate-500 font-medium">
+                <span id="txt-progCheckin">Check-in Complete</span>
+                <span id="txt-progDoctor">Doctor Consultation</span>
+              </div>
+              <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                <div id="waitProgressBar" class="bg-blue-600 h-full rounded-full transition-all duration-1000" style="width: 15%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Transparency & Clinical Reasoning Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h4 id="txt-headerReasoning" class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <i data-lucide="brain-circuit" class="w-4 h-4 text-blue-600"></i>
+              Clinical Triage Reasoning
+            </h4>
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <p id="triageReasoning" class="text-sm text-slate-700 leading-relaxed"></p>
+            </div>
+          </div>
+
+          <!-- 4. ED Queue Visibility Graph -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h4 id="txt-headerQueue" class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-600"></i>
+                Current ED Queue Capacity Load
+              </h4>
+              <span id="txt-census" class="text-xs font-medium text-slate-400">Live Census: 18 Patients</span>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-red-700 font-semibold flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-red-600"></span> <span id="txt-lvl1">Level 1: Immediate</span>
+                  </span>
+                  <span class="text-slate-500">2 Patients</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-red-600 h-full rounded-full" style="width: 40%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-orange-700 font-semibold flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-orange-500"></span> <span id="txt-lvl2">Level 2: Emergent</span>
+                  </span>
+                  <span class="text-slate-500">4 Patients</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-orange-500 h-full rounded-full" style="width: 65%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-amber-700 font-semibold flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> <span id="txt-lvl3">Level 3: Urgent</span>
+                  </span>
+                  <span class="text-slate-500">7 Patients</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-amber-500 h-full rounded-full" style="width: 85%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-emerald-700 font-semibold flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> <span id="txt-lvl4">Level 4/5: Non-Urgent</span>
+                  </span>
+                  <span class="text-slate-500">5 Patients</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-emerald-500 h-full rounded-full" style="width: 50%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Red Flag Emergency Banner -->
+          <div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3 pulse-ring">
+            <div class="p-2 bg-red-100 text-red-600 rounded-lg shrink-0">
+              <i data-lucide="siren" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h5 id="txt-alertTitle" class="text-sm font-bold text-red-900">Safety Notice for Waiting Patients</h5>
+              <p id="txt-alertDesc" class="text-xs text-red-700 mt-0.5 leading-normal">
+                If you experience sudden worsening of symptoms—such as chest pressure, acute dizziness, severe shortness of breath, or confusion—please notify the triage nurse immediately.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+      <p>TriageFlow AI — Sarawak Healthcare Prototype built for inclusive community care.</p>
+    </div>
+  </footer>
+
+  <!-- Application Logic & Multi-Language Dictionary -->
+  <script>
+    lucide.createIcons();
+
+    // Comprehensive Translation Dictionary
+    const TRANSLATIONS = {
+      en: {
+        clinicStatus: "Clinic Status: Normal Capacity",
+        intakeHeader: "Patient Intake Check-in",
+        demoTitle: "Judge Pitch Demo Quick-Fills:",
+        demoChest: "Chest Pain (ESI 1)",
+        demoCut: "Minor Cut (ESI 4)",
+        labelDemo: "1. Patient Demographics",
+        namePlace: "Full Name",
+        agePlace: "Age",
+        phonePlace: "Emergency Contact Phone",
+        labelSymptom: "2. Chief Complaint / Primary Symptom",
+        symChest: "Chest Pain",
+        symBreath: "Shortness of Breath",
+        symStomach: "Abdominal Pain",
+        symFever: "High Fever",
+        symSprain: "Joint Sprain",
+        symCut: "Minor Cut",
+        labelVitals: "3. Vital Signs & Pain Scale",
+        painTitle: "Pain Severity (1-10):",
+        painMild: "Mild (1)",
+        painMod: "Moderate (5)",
+        painSev: "Severe (10)",
+        hrLabel: "Heart Rate (bpm)",
+        bpLabel: "Blood Pressure",
+        labelDuration: "4. Symptom Duration",
+        durOpt1: "Less than 1 hour (Sudden onset)",
+        durOpt2: "1 to 6 hours",
+        durOpt3: "24+ hours (Gradual / Persistent)",
+        btnSubmit: "Evaluate Triage Level & Wait Time",
+        phTitle: "Awaiting Intake Data",
+        phDesc: "Fill out the patient self-check-in form on the left or click a demo quick-fill button to evaluate emergency severity and view real-time queue analytics.",
+        phTag: "Triage Algorithm Ready (ESI Standard 1-5)",
+        labelWait: "Estimated Care Time",
+        bedNote: "(Immediate Bed Placement)",
+        labelPos: "Queue Position",
+        progCheckin: "Check-in Complete",
+        progDoctor: "Doctor Consultation",
+        headerReasoning: "Clinical Triage Reasoning",
+        headerQueue: "Current ED Queue Capacity Load",
+        census: "Live Census: 18 Patients",
+        lvl1: "Level 1: Immediate",
+        lvl2: "Level 2: Emergent",
+        lvl3: "Level 3: Urgent",
+        lvl4: "Level 4/5: Non-Urgent",
+        alertTitle: "Safety Notice for Waiting Patients",
+        alertDesc: "If you experience sudden worsening of symptoms—such as chest pressure, acute dizziness, severe shortness of breath, or confusion—please notify the triage nurse immediately."
+      },
+      ms: {
+        clinicStatus: "Status Klinik: Kapasiti Normal",
+        intakeHeader: "Daftar Masuk Pesakit",
+        demoTitle: "Isi Pantas Demo Trik:",
+        demoChest: "Sakit Dada (ESI 1)",
+        demoCut: "Luka Kecil (ESI 4)",
+        labelDemo: "1. Maklumat Pesakit",
+        namePlace: "Nama Penuh",
+        agePlace: "Umur",
+        phonePlace: "Nombor Telefon Kecemasan",
+        labelSymptom: "2. Aduan Utama / Simptom",
+        symChest: "Sakit Dada",
+        symBreath: "Sesak Nafas",
+        symStomach: "Sakit Perut",
+        symFever: "Demam Tinggi",
+        symSprain: "Terseliuh Sendi",
+        symCut: "Luka Kecil",
+        labelVitals: "3. Tanda Vital & Skala Kesakitan",
+        painTitle: "Tahap Kesakitan (1-10):",
+        painMild: "Ringan (1)",
+        painMod: "Sederhana (5)",
+        painSev: "Teruk (10)",
+        hrLabel: "Kadar Denyutan Jantung (bpm)",
+        bpLabel: "Tekanan Darah",
+        labelDuration: "4. Tempoh Simptom",
+        durOpt1: "Masa kurang dari 1 jam (Tiba-tiba)",
+        durOpt2: "1 hingga 6 jam",
+        durOpt3: "24+ jam (Berterusan)",
+        btnSubmit: "Nilaikan Tahap Triage & Masa Menunggu",
+        phTitle: "Menunggu Data Pesakit",
+        phDesc: "Sila isi borang di sebelah kiri atau tekan butang isi pantas demo untuk menilai tahap kecemasan dan masa menunggu.",
+        phTag: "Algoritma Triage Sedia (Piawaian ESI 1-5)",
+        labelWait: "Anggaran Masa Dirawat",
+        bedNote: "(Kemasukan Katil Serta-merta)",
+        labelPos: "Kedudukan Giliran",
+        progCheckin: "Pendaftaran Selesai",
+        progDoctor: "Pemeriksaan Doktor",
+        headerReasoning: "Sebab Alasan Klinikal Triage",
+        headerQueue: "Beban Kapasiti Jabatan Kecemasan",
+        census: "Jumlah Pesakit Semasa: 18 Orang",
+        lvl1: "Tahap 1: Kecemasan Serta-merta",
+        lvl2: "Tahap 2: Sangat Mendesak",
+        lvl3: "Tahap 3: Mendesak",
+        lvl4: "Tahap 4/5: Tidak Mendesak",
+        alertTitle: "Notis Keselamatan Pesakit Menunggu",
+        alertDesc: "Jika anda mengalami tanda-tanda yang semakin teruk secara tiba-tiba—seperti dada makin sakit, pening kepala teruk, atau sukar bernafas—sila beritahu jururawat bertugas dengan segera."
+      },
+      zh: {
+        clinicStatus: "门诊状态：正常接诊",
+        intakeHeader: "患者登记",
+        demoTitle: "演示快速填报：",
+        demoChest: "胸痛 (ESI 1)",
+        demoCut: "微小割伤 (ESI 4)",
+        labelDemo: "1. 患者基本信息",
+        namePlace: "姓名",
+        agePlace: "年龄",
+        phonePlace: "紧急联系电话",
+        labelSymptom: "2. 主要症状",
+        symChest: "胸痛",
+        symBreath: "呼吸急促/困难",
+        symStomach: "剧烈腹痛",
+        symFever: "高烧",
+        symSprain: "关节扭伤",
+        symCut: "轻微割伤",
+        labelVitals: "3. 生命体征与疼痛程度",
+        painTitle: "疼痛指数 (1-10):",
+        painMild: "轻微 (1)",
+        painMod: "中度 (5)",
+        painSev: "剧烈 (10)",
+        hrLabel: "心率 (bpm)",
+        bpLabel: "血压",
+        labelDuration: "4. 症状持续时间",
+        durOpt1: "少于 1 小时（突发）",
+        durOpt2: "1 至 6 小时",
+        durOpt3: "24 小时以上（持续性）",
+        btnSubmit: "评估分诊等级与等待时间",
+        phTitle: "等待患者输入信息",
+        phDesc: "请填写左侧的登记表或点击演示按钮，系统将自动评估急诊分级并显示实时排队情况。",
+        phTag: "分诊算法已就绪 (ESI 1-5 标准)",
+        labelWait: "预计就诊等待时间",
+        bedNote: "(安排立即入院/诊治)",
+        labelPos: "当前排队位置",
+        progCheckin: "完成登记",
+        progDoctor: "医师问诊",
+        headerReasoning: "临床分诊评估依据",
+        headerQueue: "急诊室当前接诊负荷",
+        census: "实时候诊人数: 18 人",
+        lvl1: "1级：危重（立即抢救）",
+        lvl2: "2级：急症（优先处理）",
+        lvl3: "3级：紧迫",
+        lvl4: "4/5级：非紧急",
+        alertTitle: "候诊患者安全提示",
+        alertDesc: "如在候诊期间突发症状加重（如胸闷胸痛加剧、严重眩晕或呼吸困难），请立即通知现场护士！"
+      },
+      iban: {
+        clinicStatus: "Status Klinik: Kapasiti Biasa",
+        intakeHeader: "Pedaftar Jamat Orang Sakit",
+        demoTitle: "Tepak Jampat Ungkup Demo:",
+        demoChest: "Pedis Dada (ESI 1)",
+        demoCut: "Luka Mimit (ESI 4)",
+        labelDemo: "1. Penerang Orang Sakit",
+        namePlace: "Nama Penuh",
+        agePlace: "Umur",
+        phonePlace: "Nombor Telefon Kecemasan",
+        labelSymptom: "2. Penyakit Utama / Tanda Sakit",
+        symChest: "Pedis Dada",
+        symBreath: "Makin Ingar/Panggal Sepah",
+        symStomach: "Pedis Perut",
+        symFever: "Deman Hangat",
+        symSprain: "Terseliah Pejoin",
+        symCut: "Luka Mimit",
+        labelVitals: "3. Tanda Cheremin Sakit & Renggat Pedis",
+        painTitle: "Renggat Pedis (1-10):",
+        painMild: "Mimit (1)",
+        painMod: "Sederhana (5)",
+        painSev: "Pedis Amai (10)",
+        hrLabel: "Penebus Degap Jantung (bpm)",
+        bpLabel: "Tekanan Darah",
+        labelDuration: "4. Pengelama Udah Nyadi Sakit",
+        durOpt1: "Kurus ari 1 jam (Tekala nya)",
+        durOpt2: "1 nyentuk 6 jam",
+        durOpt3: "24+ jam (Turus nyadi)",
+        btnSubmit: "Peda Renggat Triage & Timbal Usul Nuang",
+        phTitle: "Nganti Penerang Orang Sakit",
+        phDesc: "Isi borang ba sebelah kiba tauka tekut butang demo jampat ungkup mentilik penyadi emergency.",
+        phTag: "Algoritma Triage Ready (Standard ESI 1-5)",
+        labelWait: "Anggaran Umbas Jam Diperesa",
+        bedNote: "(Sertamerta Diberi Katak/Kati)",
+        labelPos: "Lumur Sida Nuang",
+        progCheckin: "Rijister Udah Tembu",
+        progDoctor: "Pemeriksa Doktor",
+        headerReasoning: "Kebuah Penemu Triage Klinikal",
+        headerQueue: "Mampu Penuh Bilik Emergency",
+        census: "Penyampau Orang Menanti: 18 Orang",
+        lvl1: "Renggat 1: Parai Sertamerta",
+        lvl2: "Renggat 2: Genap Beguna Ditulong",
+        lvl3: "Renggat 3: Beguna Ditulong",
+        lvl4: "Renggat 4/5: Nadai Kritis",
+        alertTitle: "Peringat Pengelikun Orang Menanti",
+        alertDesc: "Enti sema penyakit nuan nyadi majak pedis—baka dada majak sepa, kepala ngelu amai, tauka tusah seput—sarat padah ngagai nurse ke gawa nya jampat-jampat."
+      },
+      bidayuh_biatah: {
+        clinicStatus: "Status Klinik: Muas Biasa",
+        intakeHeader: "Pendaftaran Pasien Masuk",
+        demoTitle: "Tepak Jipatas Unyag Demo:",
+        demoChest: "Pedi Daba (ESI 1)",
+        demoCut: "Ruwas Miti (ESI 4)",
+        labelDemo: "1. Habar Pasien",
+        namePlace: "Anag Penuh",
+        agePlace: "Umur",
+        phonePlace: "Nombor Telefon Kecemasan",
+        labelSymptom: "2. Penyakit Utama / Tanda Pedi",
+        symChest: "Pedi Daba",
+        symBreath: "Subat Sebiu",
+        symStomach: "Pedi Tinai",
+        symFever: "Demam Ansu",
+        symSprain: "Terseliah Sanga",
+        symCut: "Ruwas Miti",
+        labelVitals: "3. Tanda Vital & Ukur Pedi",
+        painTitle: "Ukuran Pedi (1-10):",
+        painMild: "Miti (1)",
+        painMod: "Sederhana (5)",
+        painSev: "Pedi Ama (10)",
+        hrLabel: "Pantas Jantung (bpm)",
+        bpLabel: "Tekanan Darah",
+        labelDuration: "4. Betang Sakit Diya",
+        durOpt1: "Kurang ari 1 jam (Serta merta)",
+        durOpt2: "1 ras 6 jam",
+        durOpt3: "24+ jam (Terus-menerus)",
+        btnSubmit: "Kira Renggat Triage & Masa Nganjing",
+        phTitle: "Ngantin Habar Pasien",
+        phDesc: "Isi borang di kiba atau tepak butang demo jipatas unyag nentuan tingkat kecemasan.",
+        phTag: "Algoritma Triage Sedia (Standard ESI 1-5)",
+        labelWait: "Anggaran Jam Diperiksa Doktor",
+        bedNote: "(Langsung Suuk Batek)",
+        labelPos: "Kedudukan Giliran",
+        progCheckin: "Pendaftaran Selesai",
+        progDoctor: "Pemeriksaan Doktor",
+        headerReasoning: "Sebab Alasan Triage Klinikal",
+        headerQueue: "Muas Bilik Kecemasan Diya",
+        census: "Jumlah Pasien Nganjing: 18 Orang",
+        lvl1: "Renggat 1: Penting Serta Merta",
+        lvl2: "Renggat 2: Penting Ama",
+        lvl3: "Renggat 3: Penting",
+        lvl4: "Renggat 4/5: Daa Penting Ama",
+        alertTitle: "Peringat Keselamatan Pasien Nganjing",
+        alertDesc: "Kalu penyakit mu jadi nyani pedi—seperti daba nyani pedi, pusing kepala ama, atau subat sebiu—sarat padah amu ras jururawat dengan jipatas."
+      },
+      bidayuh_bau: {
+        clinicStatus: "Status Klinik: Muas Biasa",
+        intakeHeader: "Daftar Pasien Nyat",
+        demoTitle: "Tepak Jipatas Nyat Demo:",
+        demoChest: "Pidi Daba (ESI 1)",
+        demoCut: "Ruwos Miti (ESI 4)",
+        labelDemo: "1. Maklumat Pasien",
+        namePlace: "Goran Penuh",
+        agePlace: "Umur",
+        phonePlace: "Nombor Telefon Kecemasan",
+        labelSymptom: "2. Aduan Utama / Simptom Pidi",
+        symChest: "Pidi Daba",
+        symBreath: "Sibut Sumbat",
+        symStomach: "Pidi Tian",
+        symFever: "Demam Pansu",
+        symSprain: "Terseliah Kuat",
+        symCut: "Ruwos Miti",
+        labelVitals: "3. Tanda Vital & Ukur Pidi",
+        painTitle: "Ukuran Pidi (1-10):",
+        painMild: "Miti (1)",
+        painMod: "Sederhana (5)",
+        painSev: "Pidi Ama (10)",
+        hrLabel: "Pantas Jantung (bpm)",
+        bpLabel: "Tekanan Darah",
+        labelDuration: "4. Bilangan Jam Nyadi Pidi",
+        durOpt1: "Kurang duweh 1 jam (Serta merta)",
+        durOpt2: "1 ras 6 jam",
+        durOpt3: "24+ jam (Majak nyadi)",
+        btnSubmit: "Nilaikan Tahap Triage & Masa Nganjing",
+        phTitle: "Nganting Maklumat Pasien",
+        phDesc: "Penuh borang nio adoi kiba atawo tepak butang demo nyat jipatas.",
+        phTag: "Algoritma Triage Ready (Standard ESI 1-5)",
+        labelWait: "Anggaran Jam Diperiksa",
+        bedNote: "(Langsung Okot Katak)",
+        labelPos: "Lumur Giliran",
+        progCheckin: "Rijister Tembu",
+        progDoctor: "Pemeriksaan Doktor",
+        headerReasoning: "Sebab Alasan Triage Klinikal",
+        headerQueue: "Muas Bilik Kecemasan Diya",
+        census: "Jumlah Pasien Nganjing: 18 Orang",
+        lvl1: "Tahap 1: Serta Merta (Bahaya)",
+        lvl2: "Tahap 2: Penting Ama",
+        lvl3: "Tahap 3: Penting",
+        lvl4: "Tahap 4/5: Daa Menda Bahaya",
+        alertTitle: "Peringat Keselamatan Pasien Nganjing",
+        alertDesc: "Kalu penyakit mu majak nyadi pidi—seperti daba nyani pidi, pusing kepala ama, atawo sibut sumbat—sarat madah ras jururawat serta merta."
+      }
+    };
+
+    let currentLang = 'en';
+
+    function changeLanguage(langKey) {
+      currentLang = langKey;
+      const dict = TRANSLATIONS[langKey] || TRANSLATIONS['en'];
+
+      // Update Text Elements
+      for (const [key, value] of Object.entries(dict)) {
+        const el = document.getElementById(`txt-${key}`) || document.getElementById(key);
+        if (el) {
+          if (el.tagName === 'INPUT') {
+            el.placeholder = value;
+          } else {
+            el.textContent = value;
+          }
+        }
+      }
+
+      // Update Symptom Pills Text
+      document.getElementById('sym-chest').textContent = dict.symChest;
+      document.getElementById('sym-breath').textContent = dict.symBreath;
+      document.getElementById('sym-stomach').textContent = dict.symStomach;
+      document.getElementById('sym-fever').textContent = dict.symFever;
+      document.getElementById('sym-sprain').textContent = dict.symSprain;
+      document.getElementById('sym-cut').textContent = dict.symCut;
+
+      // Placeholders
+      document.getElementById('patientName').placeholder = dict.namePlace;
+      document.getElementById('patientAge').placeholder = dict.agePlace;
+      document.getElementById('emergencyContact').placeholder = dict.phonePlace;
+
+      // Dropdown Options
+      document.getElementById('dur-opt1').textContent = dict.durOpt1;
+      document.getElementById('dur-opt2').textContent = dict.durOpt2;
+      document.getElementById('dur-opt3').textContent = dict.durOpt3;
+    }
+
+    function updatePainDisplay(val) {
+      const display = document.getElementById('painDisplay');
+      display.textContent = `${val} / 10`;
+      if (val >= 8) {
+        display.className = "text-sm font-bold text-red-600";
+      } else if (val >= 5) {
+        display.className = "text-sm font-bold text-amber-600";
+      } else {
+        display.className = "text-sm font-bold text-blue-600";
+      }
+    }
+
+    function selectSymptom(symptomName) {
+      document.getElementById('selectedSymptom').value = symptomName;
+      
+      const buttons = document.querySelectorAll('.symptom-btn');
+      buttons.forEach(btn => {
+        if (btn.getAttribute('onclick').includes(symptomName)) {
+          btn.classList.add('border-blue-600', 'bg-blue-50', 'ring-2', 'ring-blue-500/20');
+          btn.classList.remove('border-slate-200');
+        } else {
+          btn.classList.remove('border-blue-600', 'bg-blue-50', 'ring-2', 'ring-blue-500/20');
+          btn.classList.add('border-slate-200');
+        }
+      });
+    }
+
+    function loadDemoData(type) {
+      if (type === 'chest_pain') {
+        document.getElementById('patientName').value = "Ading Anak Jantan";
+        document.getElementById('patientAge').value = "58";
+        document.getElementById('emergencyContact').value = "019-8834567";
+        selectSymptom('Chest Pain');
+        document.getElementById('painScale').value = 9;
+        updatePainDisplay(9);
+        document.getElementById('heartRate').value = "112";
+        document.getElementById('bloodPressure').value = "155/95";
+        document.getElementById('symptomDuration').value = "<1hr";
+      } else if (type === 'minor_injury') {
+        document.getElementById('patientName').value = "Grace Bungan";
+        document.getElementById('patientAge').value = "24";
+        document.getElementById('emergencyContact').value = "013-8123987";
+        selectSymptom('Minor Cut');
+        document.getElementById('painScale').value = 3;
+        updatePainDisplay(3);
+        document.getElementById('heartRate').value = "72";
+        document.getElementById('bloodPressure').value = "118/76";
+        document.getElementById('symptomDuration').value = "1-6hrs";
+      }
+    }
+
+    function evaluateTriage(symptom, pain, hr) {
+      const painVal = parseInt(pain) || 5;
+      const hrVal = parseInt(hr) || 75;
+
+      if ((symptom === 'Chest Pain' && painVal > 7) || (symptom === 'Shortness of Breath' && painVal > 7)) {
+        return {
+          esi: 1,
+          category: "Immediate Resuscitation",
+          title: "ESI Level 1: Red Alert",
+          waitTime: "0 mins",
+          queuePos: "#1 Next Bed",
+          progressWidth: "98%",
+          bgClass: "bg-red-600 border-red-700",
+          reasoning: "Assigned Priority 1 due to high-risk cardiac/respiratory indicators paired with severe pain (>7). High-acuity life-safety cases are directed to resuscitation bays immediately."
+        };
+      }
+
+      if (symptom === 'Chest Pain' || symptom === 'Shortness of Breath' || (symptom === 'Abdominal Pain' && hrVal > 100)) {
+        return {
+          esi: 2,
+          category: "Emergent Care Needed",
+          title: "ESI Level 2: High Priority",
+          waitTime: "10 - 20 mins",
+          queuePos: "#2 in Queue",
+          progressWidth: "75%",
+          bgClass: "bg-orange-500 border-orange-600",
+          reasoning: "Assigned Priority 2 due to potential organ failure risks, acute distress, or abnormal vitals (elevated HR). Continuous monitoring required."
+        };
+      }
+
+      if (symptom === 'Fever' || symptom === 'Abdominal Pain') {
+        return {
+          esi: 3,
+          category: "Urgent Assessment",
+          title: "ESI Level 3: Urgent",
+          waitTime: "30 - 60 mins",
+          queuePos: "#5 in Queue",
+          progressWidth: "45%",
+          bgClass: "bg-amber-500 border-amber-600",
+          reasoning: "Assigned Priority 3 requiring multi-resource evaluation (lab tests or IV fluids needed). Vital signs are stable at initial intake."
+        };
+      }
+
+      return {
+        esi: 4,
+        category: "Less Urgent Care",
+        title: "ESI Level 4: Standard Care",
+        waitTime: "60 - 90 mins",
+        queuePos: "#8 in Queue",
+        progressWidth: "20%",
+        bgClass: "bg-emerald-600 border-emerald-700",
+        reasoning: "Assigned Priority 4 for minor isolated injuries or low-acuity complaints requiring single resource intervention. Stable presentation."
+      };
+    }
+
+    function handleTriageSubmit(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('patientName').value;
+      const age = document.getElementById('patientAge').value;
+      const symptom = document.getElementById('selectedSymptom').value;
+      const pain = document.getElementById('painScale').value;
+      const hr = document.getElementById('heartRate').value;
+
+      if (!symptom) {
+        alert("Please select a chief complaint / primary symptom.");
+        return;
+      }
+
+      const result = evaluateTriage(symptom, pain, hr);
+
+      document.getElementById('placeholderState').classList.add('hidden');
+      const dashboard = document.getElementById('activeDashboard');
+      dashboard.classList.remove('hidden');
+
+      const banner = document.getElementById('esiBanner');
+      banner.className = `p-6 rounded-xl border shadow-sm text-white transition-all relative overflow-hidden ${result.bgClass}`;
+
+      document.getElementById('esiBadge').textContent = `ESI Level ${result.esi}`;
+      document.getElementById('esiCategory').textContent = result.category;
+      document.getElementById('esiTitle').textContent = result.title;
+      document.getElementById('patientMeta').textContent = `Patient: ${name} (Age ${age}) • Complaint: ${symptom}`;
+
+      document.getElementById('waitTimeDisplay').textContent = result.waitTime;
+      document.getElementById('queuePosition').textContent = result.queuePos;
+      document.getElementById('waitProgressBar').style.width = result.progressWidth;
+      document.getElementById('triageReasoning').textContent = result.reasoning;
+
+      if (window.innerWidth < 1024) {
+        dashboard.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  </script>
+</body>
+</html>
