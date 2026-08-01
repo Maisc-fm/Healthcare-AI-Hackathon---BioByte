@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TriageFlow AI — Emergency Department Triage &amp; Wait-Time Estimator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --slate-bg:#f8fafc;
+    --primary:#2563eb;
+    --primary-dark:#1d4ed8;
+    --emerald:#059669;
+    --red:#dc2626;
+  }
+  *{ font-family:'Inter', system-ui, sans-serif; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  body{ background-color:var(--slate-bg); }
+
+  /* Heartbeat / EKG signature line */
+  .ekg-track{ overflow:hidden; position:relative; }
+  .ekg-line{
+    stroke-dasharray: 1400;
+    stroke-dashoffset: 1400;
+    animation: draw-ekg 3.2s linear infinite;
+  }
+  @keyframes draw-ekg{
+    0%{ stroke-dashoffset:1400; }
+    60%{ stroke-dashoffset:0; }
+    100%{ stroke-dashoffset:-1400; }
+  }
+
+  .fade-in{ animation: fadeIn .45s ease forwards; }
+  @keyframes fadeIn{
+    from{ opacity:0; transform:translateY(8px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .pulse-dot{ animation: pulseDot 2s ease-in-out infinite; }
+  @keyframes pulseDot{
+    0%,100%{ box-shadow:0 0 0 0 rgba(5,150,105,.45); }
+    50%{ box-shadow:0 0 0 6px rgba(5,150,105,0); }
+  }
+  .pulse-dot-red{ animation: pulseDotRed 1.1s ease-in-out infinite; }
+  @keyframes pulseDotRed{
+    0%,100%{ box-shadow:0 0 0 0 rgba(220,38,38,.55); }
+    50%{ box-shadow:0 0 0 8px rgba(220,38,38,0); }
+  }
+
+  .pill{ transition: all .15s ease; }
+  .pill[aria-pressed="true"]{ transform: translateY(-1px); }
+
+  .wait-track{ background: repeating-linear-gradient(90deg, #e2e8f0 0 10px, #eef2f7 10px 20px); }
+  .wait-fill{ transition: width 1.1s cubic-bezier(.22,.9,.35,1); }
+
+  input[type="range"]{ -webkit-appearance:none; height:6px; border-radius:999px; background:#e2e8f0; }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
+    background:var(--primary); border:3px solid white; box-shadow:0 1px 4px rgba(0,0,0,.25); cursor:pointer; margin-top:-7px;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:20px; height:20px; border-radius:50%; background:var(--primary); border:3px solid white; box-shadow:0 1px 4px rgba(0,0,0,.25); cursor:pointer;
+  }
+
+  ::selection{ background: #bfdbfe; }
+
+  .focus-ring:focus-visible{
+    outline: 3px solid #2563eb;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .ekg-line, .pulse-dot, .pulse-dot-red, .fade-in{ animation: none !important; }
+    .wait-fill{ transition: none !important; }
+  }
+
+  .queue-bar{ transition: width 1s ease; }
+
+  .placeholder-breathe{ animation: breathe 3.5s ease-in-out infinite; }
+  @keyframes breathe{
+    0%,100%{ opacity:.55; }
+    50%{ opacity:1; }
+  }
+</style>
+</head>
+<body class="min-h-screen text-slate-800">
+
+<!-- ============ HEADER ============ -->
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="relative w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm shrink-0">
+        <i data-lucide="activity" class="w-5 h-5 text-white"></i>
+      </div>
+      <div class="leading-tight">
+        <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-900">TriageFlow <span class="text-blue-600">AI</span></h1>
+        <p class="text-[11px] sm:text-xs text-slate-500 -mt-0.5">Emergency Department Triage &amp; Wait-Time Estimator</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 sm:gap-5">
+      <div id="clinicStatus" class="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full pl-2.5 pr-3 py-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-600 pulse-dot"></span>
+        <span class="text-xs font-semibold text-emerald-700">Clinic Status: Normal Capacity</span>
+      </div>
+      <div class="hidden md:flex items-center gap-1.5 text-slate-500 text-xs mono">
+        <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+        <span id="clockDisplay">--:--:--</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3 sm:gap-5">
+      <div id="clinicStatus" class="hidden sm:flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full pl-2.5 pr-3 py-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-600 pulse-dot"></span>
+        <span class="text-xs font-semibold text-emerald-700">Clinic Status: Normal Capacity</span>
+      </div>
+      <div class="hidden md:flex items-center gap-1.5 text-slate-500 text-xs mono">
+        <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+        <span id="clockDisplay">--:--:--</span>
+      </div>
+
+      <!-- ADD THIS BUTTON HERE -->
+      <a href="page1.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition focus-ring">
+        ← Back to Dashboard
+      </a>
+    </div>
+  </div>
+  <!-- signature EKG accent line -->
+  <div class="ekg-track w-full h-6 bg-slate-900">
+    <svg viewBox="0 0 1400 40" preserveAspectRatio="none" class="w-full h-full">
+      <polyline class="ekg-line" fill="none" stroke="#34d399" stroke-width="2"
+        points="0,20 60,20 80,20 95,4 110,36 125,20 160,20 220,20 240,20 255,4 270,36 285,20 320,20
+                380,20 400,20 415,4 430,36 445,20 480,20 540,20 560,20 575,4 590,36 605,20 640,20
+                700,20 720,20 735,4 750,36 765,20 800,20 860,20 880,20 895,4 910,36 925,20 960,20
+                1020,20 1040,20 1055,4 1070,36 1085,20 1120,20 1180,20 1200,20 1215,4 1230,36 1245,20 1280,20 1400,20"/>
+    </svg>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- ============ LEFT COLUMN: CHECK-IN FORM ============ -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="clipboard-list" class="w-5 h-5 text-blue-600"></i>
+          Patient Self Check-in
+        </h2>
+      </div>
+      <p class="text-sm text-slate-500 mb-4">Fill in the details below. Fields marked optional help refine your priority score but aren't required to check in.</p>
+
+      <!-- Demo quick-fill -->
+      <div class="flex flex-wrap gap-2 mb-5 p-3 rounded-xl bg-slate-50 border border-dashed border-slate-300">
+        <span class="text-xs font-semibold text-slate-500 flex items-center gap-1 mr-1"><i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Demo:</span>
+        <button type="button" id="demoChestPain" class="focus-ring text-xs font-semibold px-3 py-1.5 rounded-full bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition">
+          Load Sample Patient (Chest Pain)
+        </button>
+        <button type="button" id="demoMinorInjury" class="focus-ring text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">
+          Load Sample Patient (Minor Injury)
+        </button>
+      </div>
+
+      <form id="triageForm" class="space-y-5" novalidate>
+
+        <!-- Demographics -->
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Patient Demographics</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="col-span-2">
+              <label for="patientName" class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+              <input id="patientName" type="text" required placeholder="e.g. Jordan Lee"
+                class="focus-ring w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label for="patientAge" class="block text-sm font-medium text-slate-700 mb-1">Age</label>
+              <input id="patientAge" type="number" min="0" max="120" required placeholder="Years"
+                class="focus-ring w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label for="emergencyContact" class="block text-sm font-medium text-slate-700 mb-1">Emergency Contact</label>
+              <input id="emergencyContact" type="tel" placeholder="Phone number"
+                class="focus-ring w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Chief Complaint -->
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Chief Complaint</h3>
+          <div id="complaintPills" class="flex flex-wrap gap-2" role="group" aria-label="Chief complaint selection">
+            <!-- injected by JS -->
+          </div>
+          <input type="hidden" id="chiefComplaint" value="" />
+        </div>
+
+        <!-- Vitals -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Vital Signs</h3>
+            <span class="text-[11px] text-slate-400">Optional — quick-fill</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div>
+              <label for="heartRate" class="block text-sm font-medium text-slate-700 mb-1">Heart Rate (bpm)</label>
+              <input id="heartRate" type="number" min="0" max="260" placeholder="e.g. 88"
+                class="focus-ring w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label for="bloodPressure" class="block text-sm font-medium text-slate-700 mb-1">Blood Pressure</label>
+              <input id="bloodPressure" type="text" placeholder="e.g. 120/80"
+                class="focus-ring w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+            </div>
+          </div>
+          <div>
+            <label for="painScale" class="flex items-center justify-between text-sm font-medium text-slate-700 mb-1">
+              <span>Pain Scale</span>
+              <span id="painScaleValue" class="mono text-blue-600 font-bold">0 / 10</span>
+            </label>
+            <input id="painScale" type="range" min="0" max="10" value="0" class="focus-ring w-full" />
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1 mono">
+              <span>No pain</span><span>Worst pain</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Duration -->
+        <div>
+          <label for="symptomDuration" class="block text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Symptom Duration</label>
+          <select id="symptomDuration" class="focus-ring w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white">
+            <option value="lt1">Less than 1 hour</option>
+            <option value="1to6">1 – 6 hours</option>
+            <option value="24plus">24+ hours</option>
+          </select>
+        </div>
+
+        <button type="submit" id="evaluateBtn"
+          class="focus-ring w-full rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm sm:text-base py-3.5 flex items-center justify-center gap-2 shadow-sm transition">
+          <i data-lucide="stethoscope" class="w-5 h-5"></i>
+          Evaluate Triage Level &amp; Wait Time
+        </button>
+      </form>
+    </section>
+
+    <!-- ============ RIGHT COLUMN: DASHBOARD ============ -->
+    <section class="space-y-5">
+
+      <!-- Placeholder state -->
+      <div id="placeholderState" class="bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm p-10 flex flex-col items-center justify-center text-center min-h-[520px]">
+        <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 placeholder-breathe">
+          <i data-lucide="heart-pulse" class="w-8 h-8 text-slate-400"></i>
+        </div>
+        <h3 class="text-slate-600 font-bold text-lg mb-1">Waiting for Submission</h3>
+        <p class="text-slate-400 text-sm max-w-sm">Complete the check-in form and press <span class="font-semibold text-slate-500">Evaluate Triage Level &amp; Wait Time</span> to see the live priority assessment here.</p>
+      </div>
+
+      <!-- Results state (hidden until submit) -->
+      <div id="resultsState" class="hidden space-y-5">
+
+        <!-- Triage status banner -->
+        <div id="triageBanner" class="rounded-2xl border shadow-sm p-5 sm:p-6 fade-in">
+          <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div class="flex items-center gap-3">
+              <div id="esiIconWrap" class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
+                <i data-lucide="triangle-alert" id="esiIcon" class="w-6 h-6 text-white"></i>
+              </div>
+              <div>
+                <p class="text-[11px] font-bold uppercase tracking-wide opacity-70" id="esiEyebrow">Emergency Severity Index</p>
+                <h3 class="text-xl sm:text-2xl font-extrabold" id="esiTitle">ESI Level —</h3>
+              </div>
+            </div>
+            <span id="esiPatientName" class="mono text-xs font-semibold bg-white/60 rounded-full px-3 py-1.5 border"></span>
+          </div>
+        </div>
+
+        <!-- Wait time -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 fade-in">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold uppercase tracking-wide text-slate-400 flex items-center gap-2">
+              <i data-lucide="timer" class="w-4 h-4"></i> Estimated Wait Time
+            </h3>
+          </div>
+          <div class="flex items-end justify-between mb-3">
+            <span id="waitTimeValue" class="text-3xl sm:text-4xl font-extrabold text-slate-900 mono">— mins</span>
+            <span id="waitTimeBadge" class="text-xs font-bold px-2.5 py-1 rounded-full"></span>
+          </div>
+          <div class="wait-track w-full h-3 rounded-full overflow-hidden">
+            <div id="waitFillBar" class="wait-fill h-full rounded-full" style="width:0%"></div>
+          </div>
+          <p class="text-xs text-slate-400 mt-2">Live estimate — recalculates as queue conditions change.</p>
+        </div>
+
+        <!-- Explanation -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 fade-in">
+          <h3 class="text-sm font-bold uppercase tracking-wide text-slate-400 flex items-center gap-2 mb-2">
+            <i data-lucide="lightbulb" class="w-4 h-4"></i> Why This Priority?
+          </h3>
+          <p id="explanationText" class="text-sm text-slate-600 leading-relaxed"></p>
+        </div>
+
+        <!-- Queue graph -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 fade-in">
+          <h3 class="text-sm font-bold uppercase tracking-wide text-slate-400 flex items-center gap-2 mb-4">
+            <i data-lucide="bar-chart-3" class="w-4 h-4"></i> ED Queue Visibility
+          </h3>
+          <div id="queueGraph" class="space-y-3"></div>
+        </div>
+
+        <!-- Red flag banner -->
+        <div class="rounded-2xl border-2 border-red-300 bg-red-50 shadow-sm p-4 sm:p-5 flex items-start gap-3 fade-in">
+          <span class="w-9 h-9 rounded-full bg-red-600 pulse-dot-red flex items-center justify-center shrink-0">
+            <i data-lucide="siren" class="w-5 h-5 text-white"></i>
+          </span>
+          <div>
+            <p class="text-sm font-bold text-red-700">Symptoms getting worse while you wait?</p>
+            <p class="text-xs text-red-600 mt-0.5">Please alert a staff member immediately if you experience worsening chest pain, difficulty breathing, fainting, or severe bleeding. Do not wait for your name to be called.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="max-w-7xl mx-auto px-4 sm:px-6 pb-8 pt-2">
+  <p class="text-[11px] text-slate-400 text-center">TriageFlow AI is a demonstration prototype. Triage logic is simulated for illustrative purposes and is not a substitute for clinical judgment.</p>
+</footer>
+
+<script>
+lucide.createIcons();
+
+/* ---------------- Clock ---------------- */
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clockDisplay').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute:'2-digit', second:'2-digit' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ---------------- Chief Complaint Pills ---------------- */
+const complaints = [
+  { id: 'chest_pain', label: 'Chest Pain', icon: 'heart-crack' },
+  { id: 'minor_cut', label: 'Minor Cut', icon: 'bandage' },
+  { id: 'fever', label: 'Fever', icon: 'thermometer' },
+  { id: 'abdominal_pain', label: 'Abdominal Pain', icon: 'zap' },
+  { id: 'joint_sprain', label: 'Joint Sprain', icon: 'bone' },
+  { id: 'shortness_of_breath', label: 'Shortness of Breath', icon: 'wind' },
+];
+
+const complaintPillsWrap = document.getElementById('complaintPills');
+const chiefComplaintInput = document.getElementById('chiefComplaint');
+
+complaints.forEach(c => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.dataset.value = c.id;
+  btn.setAttribute('aria-pressed', 'false');
+  btn.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600';
+  btn.innerHTML = `<i data-lucide="${c.icon}" class="w-3.5 h-3.5"></i><span>${c.label}</span>`;
+  btn.addEventListener('click', () => {
+    const isSelected = chiefComplaintInput.value === c.id;
+    document.querySelectorAll('#complaintPills button').forEach(b => {
+      b.setAttribute('aria-pressed', 'false');
+      b.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600';
+    });
+    if (!isSelected) {
+      btn.setAttribute('aria-pressed', 'true');
+      btn.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-blue-600 bg-blue-600 text-white shadow-sm';
+      chiefComplaintInput.value = c.id;
+    } else {
+      chiefComplaintInput.value = '';
+    }
+  });
+  complaintPillsWrap.appendChild(btn);
+});
+lucide.createIcons();
+
+/* ---------------- Pain Scale ---------------- */
+const painScale = document.getElementById('painScale');
+const painScaleValue = document.getElementById('painScaleValue');
+painScale.addEventListener('input', () => {
+  painScaleValue.textContent = `${painScale.value} / 10`;
+});
+
+/* ---------------- Demo Quick-fill ---------------- */
+function selectComplaintById(id){
+  const btn = document.querySelector(`#complaintPills button[data-value="${id}"]`);
+  if (btn) btn.click();
+}
+
+document.getElementById('demoChestPain').addEventListener('click', () => {
+  document.getElementById('patientName').value = 'Marcus Ibrahim';
+  document.getElementById('patientAge').value = 58;
+  document.getElementById('emergencyContact').value = '555-019-2231';
+  selectComplaintById('chest_pain');
+  document.getElementById('heartRate').value = 112;
+  document.getElementById('bloodPressure').value = '150/95';
+  painScale.value = 9;
+  painScale.dispatchEvent(new Event('input'));
+  document.getElementById('symptomDuration').value = 'lt1';
+  document.getElementById('triageForm').requestSubmit();
+});
+
+document.getElementById('demoMinorInjury').addEventListener('click', () => {
+  document.getElementById('patientName').value = 'Priya Nandakumar';
+  document.getElementById('patientAge').value = 27;
+  document.getElementById('emergencyContact').value = '555-044-7789';
+  selectComplaintById('joint_sprain');
+  document.getElementById('heartRate').value = 76;
+  document.getElementById('bloodPressure').value = '118/76';
+  painScale.value = 3;
+  painScale.dispatchEvent(new Event('input'));
+  document.getElementById('symptomDuration').value = '24plus';
+  document.getElementById('triageForm').requestSubmit();
+});
+
+/* ---------------- ESI Level Config ---------------- */
+const ESI_CONFIG = {
+  1: { label: 'ESI Level 1 — Immediate', short:'Resuscitation', color:'red',     bannerBg:'bg-red-50',    bannerBorder:'border-red-300',    text:'text-red-700',    iconBg:'bg-red-600',    badgeBg:'bg-red-100 text-red-700',    fill:'#dc2626' },
+  2: { label: 'ESI Level 2 — Emergent',  short:'Emergent',     color:'orange',  bannerBg:'bg-orange-50', bannerBorder:'border-orange-300', text:'text-orange-700', iconBg:'bg-orange-500', badgeBg:'bg-orange-100 text-orange-700', fill:'#f97316' },
+  3: { label: 'ESI Level 3 — Urgent',    short:'Urgent',       color:'yellow',  bannerBg:'bg-yellow-50', bannerBorder:'border-yellow-300', text:'text-yellow-700', iconBg:'bg-yellow-500', badgeBg:'bg-yellow-100 text-yellow-700', fill:'#eab308' },
+  4: { label: 'ESI Level 4 — Less Urgent', short:'Less Urgent', color:'green', bannerBg:'bg-emerald-50', bannerBorder:'border-emerald-300', text:'text-emerald-700', iconBg:'bg-emerald-600', badgeBg:'bg-emerald-100 text-emerald-700', fill:'#059669' },
+  5: { label: 'ESI Level 5 — Non-Urgent', short:'Non-Urgent',  color:'blue',    bannerBg:'bg-blue-50',   bannerBorder:'border-blue-300',   text:'text-blue-700',   iconBg:'bg-blue-600',   badgeBg:'bg-blue-100 text-blue-700', fill:'#2563eb' },
+};
+
+const ESI_ICON = { 1:'siren', 2:'alert-triangle', 3:'clock-alert', 4:'circle-check', 5:'smile' };
+
+/* ---------------- Triage Rule Engine ---------------- */
+function evaluateTriage({ complaint, painScaleVal, heartRateVal, duration }){
+  const hasComplaint = c => complaint === c;
+
+  // ESI 1 — Immediate
+  if ((hasComplaint('chest_pain') && painScaleVal > 7) || hasComplaint('shortness_of_breath')) {
+    const reason = hasComplaint('shortness_of_breath')
+      ? 'Shortness of breath was reported. Airway and breathing compromise is treated as an immediate life threat and bypasses the standard queue.'
+      : `Chest pain with a self-reported pain score of ${painScaleVal}/10 was reported. High-acuity cardiac presentations are treated as an immediate life threat and bypass the standard queue.`;
+    return { esi: 1, waitMin: 0, waitMax: 0, reason };
+  }
+
+  // ESI 2 — Emergent
+  const highHeartRate = heartRateVal !== null && heartRateVal >= 100;
+  if (hasComplaint('abdominal_pain') && painScaleVal >= 6 && highHeartRate) {
+    return {
+      esi: 2, waitMin: 10, waitMax: 20,
+      reason: `Severe abdominal pain (${painScaleVal}/10) combined with an elevated heart rate (${heartRateVal} bpm) suggests a potentially serious underlying condition. High-acuity cases are prioritized over non-emergent visits to ensure patient safety.`
+    };
+  }
+  if (hasComplaint('abdominal_pain') && painScaleVal >= 6) {
+    return {
+      esi: 2, waitMin: 10, waitMax: 25,
+      reason: `Severe abdominal pain (${painScaleVal}/10) was reported. This is treated as high-acuity and prioritized ahead of non-emergent visits, pending a full vitals check.`
+    };
+  }
+
+  // ESI 3 — Urgent
+  const highFever = hasComplaint('fever');
+  const moderatePain = painScaleVal >= 4 && painScaleVal <= 7;
+  if (highFever && moderatePain) {
+    return {
+      esi: 3, waitMin: 30, waitMax: 60,
+      reason: `A fever combined with moderate reported pain (${painScaleVal}/10) indicates a condition that needs prompt evaluation, but does not show signs of immediate life threat.`
+    };
+  }
+  if (highFever) {
+    return {
+      esi: 3, waitMin: 30, waitMax: 60,
+      reason: `Fever was reported as the chief complaint. This is treated as urgent and scheduled ahead of non-urgent visits.`
+    };
+  }
+  if (hasComplaint('abdominal_pain')) {
+    return {
+      esi: 3, waitMin: 30, waitMax: 55,
+      reason: `Abdominal pain was reported at a moderate level (${painScaleVal}/10). This warrants a timely evaluation without immediate life-threat indicators.`
+    };
+  }
+  if (moderatePain && duration === 'lt1') {
+    return {
+      esi: 3, waitMin: 30, waitMax: 60,
+      reason: `A moderate pain score of ${painScaleVal}/10 with symptom onset under an hour warrants a timely evaluation.`
+    };
+  }
+
+  // ESI 4/5 — Non-Urgent
+  if (hasComplaint('minor_cut') || hasComplaint('joint_sprain')) {
+    const esiLevel = painScaleVal <= 3 ? 5 : 4;
+    return {
+      esi: esiLevel, waitMin: 60, waitMax: 90,
+      reason: `${complaintLabel(complaint)} with a low reported pain score (${painScaleVal}/10) is classified as non-urgent. These cases are seen after all higher-acuity patients have been addressed.`
+    };
+  }
+
+  // Fallback for any remaining combination
+  if (painScaleVal >= 8) {
+    return {
+      esi: 2, waitMin: 10, waitMax: 25,
+      reason: `A high self-reported pain score (${painScaleVal}/10) was recorded for "${complaintLabel(complaint) || 'an unspecified complaint'}". This is treated as emergent pending clinical review.`
+    };
+  }
+  if (painScaleVal >= 4) {
+    return {
+      esi: 3, waitMin: 30, waitMax: 60,
+      reason: `A moderate pain score (${painScaleVal}/10) was recorded for "${complaintLabel(complaint) || 'an unspecified complaint'}". This warrants a timely, non-immediate evaluation.`
+    };
+  }
+  return {
+    esi: 5, waitMin: 60, waitMax: 90,
+    reason: `No high-acuity indicators were identified for "${complaintLabel(complaint) || 'this complaint'}" based on the information provided. This is classified as non-urgent.`
+  };
+}
+
+function complaintLabel(id){
+  const found = complaints.find(c => c.id === id);
+  return found ? found.label : '';
+}
+
+/* ---------------- Queue Graph (simulated live load) ---------------- */
+function renderQueueGraph(highlightEsi){
+  const loads = { 1: 1, 2: 3, 3: 7, 4: 5, 5: 4 };
+  const maxLoad = Math.max(...Object.values(loads));
+  const wrap = document.getElementById('queueGraph');
+  wrap.innerHTML = '';
+  for (let level = 1; level <= 5; level++){
+    const cfg = ESI_CONFIG[level];
+    const count = loads[level];
+    const pct = Math.round((count / maxLoad) * 100);
+    const isActive = level === highlightEsi;
+    const row = document.createElement('div');
+    row.innerHTML = `
+      <div class="flex items-center justify-between text-xs mb-1">
+        <span class="font-semibold ${isActive ? cfg.text : 'text-slate-500'} flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full" style="background:${cfg.fill}"></span>
+          Level ${level} · ${cfg.short}${isActive ? ' — you are here' : ''}
+        </span>
+        <span class="mono text-slate-400">${count} waiting</span>
+      </div>
+      <div class="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
+        <div class="queue-bar h-full rounded-full" style="width:${pct}%; background:${cfg.fill}; ${isActive ? '' : 'opacity:.55'}"></div>
+      </div>
+    `;
+    wrap.appendChild(row);
+  }
+}
+
+/* ---------------- Form Submission ---------------- */
+const form = document.getElementById('triageForm');
+const placeholderState = document.getElementById('placeholderState');
+const resultsState = document.getElementById('resultsState');
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById('patientName').value.trim() || 'Patient';
+  const complaint = chiefComplaintInput.value;
+  const painScaleVal = parseInt(painScale.value, 10) || 0;
+  const heartRateRaw = document.getElementById('heartRate').value;
+  const heartRateVal = heartRateRaw ? parseInt(heartRateRaw, 10) : null;
+  const duration = document.getElementById('symptomDuration').value;
+
+  if (!complaint){
+    alert('Please select a chief complaint before evaluating.');
+    return;
+  }
+
+  const result = evaluateTriage({ complaint, painScaleVal, heartRateVal, duration });
+  renderResults(name, result);
+
+  placeholderState.classList.add('hidden');
+  resultsState.classList.remove('hidden');
+  resultsState.querySelectorAll('.fade-in').forEach(el => {
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+  });
+
+  resultsState.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+function renderResults(name, result){
+  const cfg = ESI_CONFIG[result.esi];
+
+  // Banner
+  const banner = document.getElementById('triageBanner');
+  banner.className = `rounded-2xl border shadow-sm p-5 sm:p-6 fade-in ${cfg.bannerBg} ${cfg.bannerBorder}`;
+  document.getElementById('esiIconWrap').className = `w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${cfg.iconBg}`;
+  document.getElementById('esiIcon').setAttribute('data-lucide', ESI_ICON[result.esi]);
+  document.getElementById('esiEyebrow').className = `text-[11px] font-bold uppercase tracking-wide opacity-70 ${cfg.text}`;
+  document.getElementById('esiTitle').className = `text-xl sm:text-2xl font-extrabold ${cfg.text}`;
+  document.getElementById('esiTitle').textContent = cfg.label;
+  document.getElementById('esiPatientName').textContent = name;
+  document.getElementById('esiPatientName').className = `mono text-xs font-semibold bg-white/70 rounded-full px-3 py-1.5 border ${cfg.bannerBorder} ${cfg.text}`;
+
+  // Wait time
+  const waitLabel = result.waitMin === 0 && result.waitMax === 0
+    ? 'Immediate'
+    : `${result.waitMin} – ${result.waitMax} mins`;
+  document.getElementById('waitTimeValue').textContent = waitLabel;
+  document.getElementById('waitTimeBadge').textContent = cfg.short;
+  document.getElementById('waitTimeBadge').className = `text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badgeBg}`;
+
+  const fillPct = result.esi === 1 ? 100 : Math.max(8, 100 - (result.waitMax / 90) * 90);
+  const fillBar = document.getElementById('waitFillBar');
+  fillBar.style.width = '0%';
+  fillBar.style.background = cfg.fill;
+  requestAnimationFrame(() => { fillBar.style.width = `${Math.min(fillPct, 100)}%`; });
+
+  // Explanation
+  document.getElementById('explanationText').textContent = result.reason;
+
+  // Queue graph
+  renderQueueGraph(result.esi);
+
+  lucide.createIcons();
+}
+</script>
+
+</body>
+</html>
