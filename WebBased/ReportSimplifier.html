@@ -95,7 +95,7 @@
         <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
         <span class="text-xs font-semibold text-emerald-700">Records Verified</span>
       </div>
-      <a href="dashboard.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition focus-ring flex items-center gap-1.5">
+      <a href="page1.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition focus-ring flex items-center gap-1.5">
         <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Dashboard
       </a>
     </div>
@@ -207,9 +207,21 @@
 
   <!-- TAB 2: SCAN & EXTRACTION -->
   <section class="tab-panel hidden space-y-4" id="tab-2">
-    <div>
-      <h2 class="text-lg font-bold text-slate-900">Scan &amp; OCR Data Extraction</h2>
-      <p class="text-xs text-slate-500">Example: 2021-03-08 Prescription Note. Original image scan and extracted structured fields.</p>
+    <!-- Header with Added "Scan Document" Action Button -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900">Scan &amp; OCR Data Extraction</h2>
+        <p class="text-xs text-slate-500">Example: 2021-03-08 Prescription Note. Original image scan and extracted structured fields.</p>
+      </div>
+      
+      <!-- Hidden Native File Input for Document Upload/Scanner Capture -->
+      <input type="file" id="documentFileInput" accept="image/*,.pdf" class="hidden" onchange="handleDocumentScan(event)">
+      
+      <!-- Trigger Button -->
+      <button onclick="document.getElementById('documentFileInput').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition focus-ring flex items-center gap-2">
+        <i data-lucide="scan-line" class="w-4 h-4"></i>
+        <span>Scan New Document</span>
+      </button>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -369,6 +381,15 @@
 
 <script>
   lucide.createIcons();
+
+  // Handle Document Scanning Input Action
+  function handleDocumentScan(event) {
+    const file = event.target.files[0];
+    if (file) {
+      alert(`Document selected: ${file.name}\nInitiating MedSync AI OCR extraction process...`);
+      // Ready for hooking up to backend scanning/OCR API processing pipeline
+    }
+  }
 
   // Tab switching logic
   const tabs = document.querySelectorAll('.tab-btn');
