@@ -419,31 +419,25 @@ painScale.addEventListener('input', () => {
 });
 
 /* ---------------- Demo Quick-fill ---------------- */
-function clearFormInputs() {
-  selectedComplaints.clear();
-  document.querySelectorAll('#complaintPills button').forEach(b => {
-    b.setAttribute('aria-pressed', 'false');
-    b.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600';
-  });
-  otherContainer.classList.add('hidden');
-  otherInput.value = '';
-
-  document.getElementById('heartRate').value = '';
-  document.getElementById('bloodPressure').value = '';
-  painScale.value = 0;
-  painScale.dispatchEvent(new Event('input'));
-  document.getElementById('symptomDuration').value = 'lt1';
+function selectComplaintById(id){
+  const btn = document.querySelector(`#complaintPills button[data-value="${id}"]`);
+  if (btn) btn.click();
 }
 
 document.getElementById('demoChestPain').addEventListener('click', () => {
-  clearFormInputs();
   document.getElementById('patientName').value = 'Marcus Ibrahim';
   document.getElementById('patientAge').value = 58;
   document.getElementById('emergencyContact').value = '555-019-2231';
+  selectComplaintById('chest_pain');
+  document.getElementById('heartRate').value = 112;
+  document.getElementById('bloodPressure').value = '150/95';
+  painScale.value = 9;
+  painScale.dispatchEvent(new Event('input'));
+  document.getElementById('symptomDuration').value = 'lt1';
+  document.getElementById('triageForm').requestSubmit();
 });
 
 document.getElementById('demoMinorInjury').addEventListener('click', () => {
-  clearFormInputs();
   document.getElementById('patientName').value = 'Priya Nandakumar';
   document.getElementById('patientAge').value = 27;
   document.getElementById('emergencyContact').value = '555-044-7789';
@@ -451,9 +445,9 @@ document.getElementById('demoMinorInjury').addEventListener('click', () => {
 
 /* ---------------- ESI Level Config ---------------- */
 const ESI_CONFIG = {
-  1: { label: 'ESI Level 1 — Immediate', short:'Resuscitation', color:'red',     bannerBg:'bg-red-50',    bannerBorder:'border-red-300',    text:'text-red-700',    iconBg:'bg-red-600',    badgeBg:'bg-red-100 text-red-700',    fill:'#dc2626' },
-  2: { label: 'ESI Level 2 — Emergent',  short:'Emergent',     color:'orange',  bannerBg:'bg-orange-50', bannerBorder:'border-orange-300', text:'text-orange-700', iconBg:'bg-orange-500', badgeBg:'bg-orange-100 text-orange-700', fill:'#f97316' },
-  3: { label: 'ESI Level 3 — Urgent',    short:'Urgent',       color:'yellow',  bannerBg:'bg-yellow-50', bannerBorder:'border-yellow-300', text:'text-yellow-700', iconBg:'bg-yellow-500', badgeBg:'bg-yellow-100 text-yellow-700', fill:'#eab308' },
+  1: { label: 'ESI Level 1 — Immediate', short:'Resuscitation', color:'red',    bannerBg:'bg-red-50',    bannerBorder:'border-red-300',    text:'text-red-700',    iconBg:'bg-red-600',    badgeBg:'bg-red-100 text-red-700',    fill:'#dc2626' },
+  2: { label: 'ESI Level 2 — Emergent',  short:'Emergent',      color:'orange',  bannerBg:'bg-orange-50', bannerBorder:'border-orange-300', text:'text-orange-700', iconBg:'bg-orange-500', badgeBg:'bg-orange-100 text-orange-700', fill:'#f97316' },
+  3: { label: 'ESI Level 3 — Urgent',    short:'Urgent',        color:'yellow',  bannerBg:'bg-yellow-50', bannerBorder:'border-yellow-300', text:'text-yellow-700', iconBg:'bg-yellow-500', badgeBg:'bg-yellow-100 text-yellow-700', fill:'#eab308' },
   4: { label: 'ESI Level 4 — Less Urgent', short:'Less Urgent', color:'green', bannerBg:'bg-emerald-50', bannerBorder:'border-emerald-300', text:'text-emerald-700', iconBg:'bg-emerald-600', badgeBg:'bg-emerald-100 text-emerald-700', fill:'#059669' },
   5: { label: 'ESI Level 5 — Non-Urgent', short:'Non-Urgent',  color:'blue',    bannerBg:'bg-blue-50',   bannerBorder:'border-blue-300',   text:'text-blue-700',   iconBg:'bg-blue-600',   badgeBg:'bg-blue-100 text-blue-700', fill:'#2563eb' },
 };
@@ -488,7 +482,7 @@ function evaluateTriage({ selectedSet, customComplaint, painScaleVal, heartRateV
   if (has('infection') && (highHeartRate || painScaleVal >= 6)) {
     return {
       esi: 2, waitMin: 10, waitMax: 25,
-      reason: 'Infection symptoms combined with elevated physiological markers (heart rate or pain) indicate high risk for systemic complications requiring urgent evaluation.'
+      reason: `Severe abdominal pain (${painScaleVal}/10) was reported. This is treated as high-acuity and prioritized ahead of non-emergent visits, pending a full vitals check.`
     };
   }
 
