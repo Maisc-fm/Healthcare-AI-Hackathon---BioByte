@@ -117,8 +117,8 @@
 <div class="bg-slate-900 text-white py-3.5 border-b border-slate-800">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between flex-wrap gap-3">
     <div class="flex items-center gap-3 flex-wrap">
-      <span class="font-extrabold text-sm sm:text-base tracking-wide">RAHMAN BIN ISMAIL</span>
-      <span class="mono text-xs text-slate-400">MRN: SGH-2000-004821 · DOB: 12-MAR-1954 (72Y) · M</span>
+      <span class="font-extrabold text-sm sm:text-base tracking-wide">FERNANDEZ</span>
+      <span class="mono text-xs text-slate-400">DNI: 10.719.045 · DOB: 12-MAR-1954 (72Y) · M</span>
       <span class="text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
         <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> PENICILLIN (RASH)
       </span>
@@ -136,7 +136,7 @@
 
 <div class="bg-white border-b border-slate-200 py-2 text-xs text-slate-500">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 mono">
-    Compiled from 5 source documents across 4 facilities · Date range 2000–2026 · Last updated 10-Jan-2026
+    Compiled from 5 source documents across CERENE Medical Facility · Last updated 08-Mar-2021
   </div>
 </div>
 
@@ -195,18 +195,11 @@
           <div class="col-span-3 text-slate-600">Continue Metformin. Annual renal panel advised.</div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-12 p-5 gap-2 md:gap-0 items-center hover:bg-slate-50/50 transition">
-          <div class="col-span-2 mono font-bold text-blue-600">2019-08-30</div>
-          <div class="col-span-3 text-slate-500 font-medium">Klinik Kesihatan Petra Jaya</div>
-          <div class="col-span-4 font-semibold text-slate-800">BP 158/96 (x3 readings). New Dx: Hypertension. eGFR 54 (↓ from 68).</div>
-          <div class="col-span-3 text-slate-600">Started Amlodipine 5mg OD, Simvastatin 20mg ON. Nephrology ref declined.</div>
-        </div>
-
         <div class="grid grid-cols-1 md:grid-cols-12 p-5 gap-2 md:gap-0 items-center hover:bg-slate-50/50 transition bg-blue-50/30">
-          <div class="col-span-2 mono font-bold text-blue-600">2026-01-10</div>
-          <div class="col-span-3 text-slate-500 font-medium">SGH — Nephrology</div>
-          <div class="col-span-4 font-semibold text-slate-800">eGFR 42, UACR 310 mg/g. Dx: CKD Stage 3a, diabetic nephropathy.</div>
-          <div class="col-span-3 text-slate-600">Referred for nephrology f/u. Avoid nephrotoxic agents.</div>
+          <div class="col-span-2 mono font-bold text-blue-600">2021-03-08</div>
+          <div class="col-span-3 text-slate-500 font-medium">CERENE — Dra. Romina Cioffi</div>
+          <div class="col-span-4 font-semibold text-slate-800">Psychiatric Prescription Visit (Desvenlafaxina &amp; Lorazepam).</div>
+          <div class="col-span-3 text-slate-600">Rx: Pristiq 100mg (30 comp) &amp; Trapax 2.5mg (60 comp).</div>
         </div>
       </div>
     </div>
@@ -216,26 +209,25 @@
   <section class="tab-panel hidden space-y-4" id="tab-2">
     <div>
       <h2 class="text-lg font-bold text-slate-900">Scan &amp; OCR Data Extraction</h2>
-      <p class="text-xs text-slate-500">Example: 2019-08-30 clinic note. Original image, OCR bounding, and extracted structured fields.</p>
+      <p class="text-xs text-slate-500">Example: 2021-03-08 Prescription Note. Original image scan and extracted structured fields.</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Document Preview -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Original Source Note</h3>
-        <div class="handwriting bg-amber-50/60 border border-amber-200/80 rounded-xl p-5 text-xl leading-relaxed text-slate-800">
-          Pt c/o headache x2/52. <mark class="bg-blue-100 text-blue-900 px-1 rounded border-b-2 border-blue-500">BP 158/96</mark>,
-          repeat <mark class="bg-blue-100 text-blue-900 px-1 rounded border-b-2 border-blue-500">156/94</mark>, <mark class="bg-blue-100 text-blue-900 px-1 rounded border-b-2 border-blue-500">160/98</mark>.
-          Dx: <mark class="bg-red-100 text-red-900 px-1 rounded border-b-2 border-red-500">HTN</mark>. Also noted
-          <mark class="bg-blue-100 text-blue-900 px-1 rounded border-b-2 border-blue-500">eGFR 54</mark> (prev 68, 2015).
-          Start <mark class="bg-amber-100 text-amber-900 px-1 rounded border-b-2 border-amber-500">T. Amlodipine 5mg OD</mark>,
-          <mark class="bg-amber-100 text-amber-900 px-1 rounded border-b-2 border-amber-500">T. Simvastatin 20mg ON</mark>.
-          Nephro ref offered, pt declined. F/U 4/52.
+      <!-- Document Preview / Image Section -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col items-center">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 w-full">Original Doctor's Note Scan</h3>
+        
+        <!-- Rendered Image -->
+        <div class="relative w-full max-w-sm rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-2 shadow-inner">
+          <img src="https://lh3.googleusercontent.com/pw/AP1GczO2XQOq6g61k-oXg7Y_i796bF5Ew-GZ25_V4b43343_c" 
+               alt="Doctor's Prescription Note" 
+               class="w-full h-auto rounded-lg object-contain max-h-[480px]">
         </div>
-        <div class="flex gap-4 mt-4 text-xs font-semibold text-slate-600">
-          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Vitals/Labs</span>
-          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Diagnosis</span>
-          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Medication</span>
+
+        <div class="flex gap-4 mt-4 text-xs font-semibold text-slate-600 w-full justify-center">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Patient Info</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Prescriptions</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Clinician Stamp</span>
         </div>
       </div>
 
@@ -244,25 +236,35 @@
         <div>
           <div class="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1">
             <span>OCR Confidence Rating</span>
-            <span class="mono font-bold text-blue-600">94%</span>
+            <span class="mono font-bold text-blue-600">88%</span>
           </div>
           <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-            <div class="h-full bg-blue-600 rounded-full" style="width: 94%;"></div>
+            <div class="h-full bg-blue-600 rounded-full" style="width: 88%;"></div>
           </div>
         </div>
 
         <div class="divide-y divide-slate-100 text-xs sm:text-sm">
-          <div class="py-2.5 flex justify-between"><span class="text-slate-500">BP (Highest Reading)</span><span class="font-bold text-slate-800">160/98 mmHg</span></div>
-          <div class="py-2.5 flex justify-between"><span class="text-slate-500">eGFR Level</span><span class="font-bold text-red-600 mono">54 mL/min/1.73m² ↓</span></div>
-          <div class="py-2.5 flex justify-between"><span class="text-slate-500">Primary Diagnosis</span><span class="font-bold text-slate-800">Hypertension <span class="mono text-xs bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 ml-1">I10</span></span></div>
-          <div class="py-2.5 flex justify-between"><span class="text-slate-500">Prescription 1</span><span class="font-bold text-slate-800">Amlodipine 5mg, OD, PO</span></div>
-          <div class="py-2.5 flex justify-between"><span class="text-slate-500">Prescription 2</span><span class="font-bold text-slate-800">Simvastatin 20mg, ON, PO</span></div>
-          <div class="py-2.5 flex justify-between"><span class="text-slate-500">Specialist Referral</span><span class="font-bold text-slate-800">Nephrology — Declined</span></div>
+          <div class="py-2.5 flex justify-between"><span class="text-slate-500">Patient Name</span><span class="font-bold text-slate-800">Fernandez</span></div>
+          <div class="py-2.5 flex justify-between"><span class="text-slate-500">National ID (DNI)</span><span class="font-bold text-slate-800 mono">10.719.045</span></div>
+          <div class="py-2.5 flex justify-between">
+            <span class="text-slate-500">Prescription 1</span>
+            <span class="font-bold text-slate-800 text-right">Desvenlafaxina 100mg x 30 comp.<br><span class="text-xs text-blue-600 font-semibold">(Brand: Pristiq)</span></span>
+          </div>
+          <div class="py-2.5 flex justify-between">
+            <span class="text-slate-500">Prescription 2</span>
+            <span class="font-bold text-slate-800 text-right">Lorazepam 2.5mg x 60 comp.<br><span class="text-xs text-blue-600 font-semibold">(Brand: Trapax)</span></span>
+          </div>
+          <div class="py-2.5 flex justify-between">
+            <span class="text-slate-500">Attending Physician</span>
+            <span class="font-bold text-slate-800 text-right">Dra. Romina Cioffi<br><span class="text-xs text-slate-500 font-normal">Psychiatry &amp; Medical Psychology</span></span>
+          </div>
+          <div class="py-2.5 flex justify-between"><span class="text-slate-500">Medical License (MP)</span><span class="font-bold text-slate-800 mono">115.117</span></div>
+          <div class="py-2.5 flex justify-between"><span class="text-slate-500">Date Issued</span><span class="font-bold text-slate-800 mono">08 / 03 / 2021</span></div>
         </div>
 
         <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-xs flex items-start gap-2">
           <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
-          <span><strong>1 field flagged for verification:</strong> Repeat BP reading order handwriting is ambiguous between "156" and "158".</span>
+          <span><strong>1 field flagged for verification:</strong> Cursive handwriting on Lorazepam dosage unit ("2,5 gr" vs "2,5 mg") verified as 2.5 mg based on standard psychiatric dosing guidelines.</span>
         </div>
       </div>
     </div>
@@ -277,45 +279,17 @@
 
     <!-- Active Problems -->
     <div class="space-y-3">
-      <div class="bg-white rounded-2xl border-l-4 border-l-red-500 border border-slate-200 p-4 shadow-sm flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Critical</span>
-            <h3 class="font-bold text-slate-900 text-base">Chronic Kidney Disease, Stage 3a</h3>
-          </div>
-          <p class="text-xs text-slate-500">Likely diabetic nephropathy. Diagnosed 2026-01-10. Referred to nephrology.</p>
-        </div>
-        <div class="text-right mono text-xs">
-          <span class="text-slate-400 block">eGFR Trend</span>
-          <span class="font-bold text-slate-900 text-sm">68 → 54 → 42</span>
-        </div>
-      </div>
-
       <div class="bg-white rounded-2xl border-l-4 border-l-amber-500 border border-slate-200 p-4 shadow-sm flex items-center justify-between flex-wrap gap-3">
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Active</span>
-            <h3 class="font-bold text-slate-900 text-base">Type 2 Diabetes Mellitus</h3>
+            <h3 class="font-bold text-slate-900 text-base">Major Depressive / Anxiety Disorder</h3>
           </div>
-          <p class="text-xs text-slate-500">Diagnosed 2011. On Metformin since onset. Contributing factor to CKD.</p>
+          <p class="text-xs text-slate-500">Managed by Dra. Romina Cioffi (CERENE). On Desvenlafaxine and Lorazepam therapy.</p>
         </div>
         <div class="text-right mono text-xs">
-          <span class="text-slate-400 block">HbA1c</span>
-          <span class="font-bold text-slate-900 text-sm">8.9% → 7.8%</span>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl border-l-4 border-l-emerald-500 border border-slate-200 p-4 shadow-sm flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">Resolved</span>
-            <h3 class="font-bold text-slate-900 text-base">Distal Radius Fracture (L)</h3>
-          </div>
-          <p class="text-xs text-slate-500">2000. Reduced and casted, healed without complication.</p>
-        </div>
-        <div class="text-right mono text-xs">
-          <span class="text-slate-400 block">Follow-up</span>
-          <span class="font-bold text-slate-600 text-sm">Discharged</span>
+          <span class="text-slate-400 block">Status</span>
+          <span class="font-bold text-amber-600 text-sm">Under Treatment</span>
         </div>
       </div>
     </div>
@@ -328,45 +302,17 @@
       <div class="divide-y divide-slate-200 text-xs sm:text-sm">
         <div class="p-4 flex items-center justify-between">
           <div>
-            <span class="font-bold text-slate-900 block">Metformin 500mg</span>
-            <span class="text-xs text-slate-500">Oral, Twice Daily (BD)</span>
+            <span class="font-bold text-slate-900 block">Desvenlafaxina (Pristiq) 100mg</span>
+            <span class="text-xs text-slate-500">Oral, 30 Tablets</span>
           </div>
-          <span class="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-1 rounded-full">⚠ Review Dose (eGFR 42)</span>
+          <span class="mono text-xs text-slate-400">Prescribed 08-Mar-2021</span>
         </div>
         <div class="p-4 flex items-center justify-between">
           <div>
-            <span class="font-bold text-slate-900 block">Amlodipine 5mg</span>
-            <span class="text-xs text-slate-500">Oral, Once Daily (OD AM)</span>
+            <span class="font-bold text-slate-900 block">Lorazepam (Trapax) 2.5mg</span>
+            <span class="text-xs text-slate-500">Oral, 60 Tablets</span>
           </div>
-          <span class="mono text-xs text-slate-400">Started 2019</span>
-        </div>
-        <div class="p-4 flex items-center justify-between">
-          <div>
-            <span class="font-bold text-slate-900 block">Simvastatin 20mg</span>
-            <span class="text-xs text-slate-500">Oral, Once Nightly (ON)</span>
-          </div>
-          <span class="mono text-xs text-slate-400">Started 2019</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Safety Alerts -->
-    <div class="space-y-3">
-      <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Safety &amp; Interaction Alerts</h3>
-      
-      <div class="bg-red-50 border border-red-200 rounded-2xl p-4 text-xs sm:text-sm flex items-start gap-3">
-        <span class="bg-red-600 text-white font-bold text-[10px] px-2 py-0.5 rounded tracking-wider uppercase shrink-0 mt-0.5">Major</span>
-        <div>
-          <h4 class="font-bold text-red-900">Simvastatin + Grapefruit Risk</h4>
-          <p class="text-red-700 text-xs mt-0.5">Grapefruit inhibits CYP3A4 metabolism of simvastatin, raising myopathy/rhabdomyolysis risk. No dietary counselling documented on file.</p>
-        </div>
-      </div>
-
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs sm:text-sm flex items-start gap-3">
-        <span class="bg-amber-600 text-white font-bold text-[10px] px-2 py-0.5 rounded tracking-wider uppercase shrink-0 mt-0.5">Moderate</span>
-        <div>
-          <h4 class="font-bold text-amber-900">Metformin Dosing vs. Renal Threshold</h4>
-          <p class="text-amber-700 text-xs mt-0.5">Metformin prescribed at eGFR 54; current eGFR is 42. Guidelines advise dose review at eGFR 30–45 and discontinuation below 30.</p>
+          <span class="mono text-xs text-slate-400">Prescribed 08-Mar-2021</span>
         </div>
       </div>
     </div>
@@ -387,7 +333,7 @@
       <i data-lucide="bot" class="w-5 h-5 text-blue-400"></i>
       <div>
         <h3 class="font-bold text-sm leading-tight">MedSync AI</h3>
-        <p class="mono text-[10px] text-slate-400">RAHMAN BIN ISMAIL · SGH-2000-004821</p>
+        <p class="mono text-[10px] text-slate-400">FERNANDEZ · DNI: 10.719.045</p>
       </div>
     </div>
     <button class="text-slate-400 hover:text-white transition" onclick="toggleChat(false)">
@@ -396,21 +342,20 @@
   </div>
 
   <div class="bg-blue-50 text-blue-800 text-[11px] mono px-4 py-2 border-b border-blue-100">
-    Grounded strictly in 5 source documents (2000–2026).
+    Grounded strictly in source prescription notes.
   </div>
 
   <!-- Messages -->
   <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs sm:text-sm" id="chatBody">
     <div class="bg-slate-100 text-slate-800 p-3 rounded-xl rounded-tl-none max-w-[85%]">
-      Ask me anything about Rahman's clinical history — medications, renal trends, or flagged interactions.
+      Ask me anything about Fernandez's prescription — medications, dosage, or attending doctor details.
     </div>
   </div>
 
   <!-- Quick Chips -->
   <div class="px-4 py-2 flex flex-wrap gap-1.5 border-t border-slate-100 bg-slate-50" id="chatChips">
-    <button class="text-xs bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 font-semibold px-2.5 py-1 rounded-full transition" onclick="askPreset(this)">Any drug interactions?</button>
-    <button class="text-xs bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 font-semibold px-2.5 py-1 rounded-full transition" onclick="askPreset(this)">Kidney function trend?</button>
-    <button class="text-xs bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 font-semibold px-2.5 py-1 rounded-full transition" onclick="askPreset(this)">Last BP reading?</button>
+    <button class="text-xs bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 font-semibold px-2.5 py-1 rounded-full transition" onclick="askPreset(this)">What medications are prescribed?</button>
+    <button class="text-xs bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 font-semibold px-2.5 py-1 rounded-full transition" onclick="askPreset(this)">Who is the doctor?</button>
   </div>
 
   <!-- Input Row -->
@@ -440,9 +385,8 @@
 
   // Chat bot logic
   const CHAT_KB = [
-    { test:/interact|clash|safety|alert/i, reply:"<b>Three safety items:</b><br>1. <b>Metformin dosing</b> — eGFR is 42, threshold review required.<br>2. <b>Simvastatin + Grapefruit</b> — CYP3A4 interaction risk.<br>3. <b>Metformin + Alcohol</b> — Lactic acidosis risk." },
-    { test:/kidney|renal|egfr/i, reply:"eGFR Trend: <b>68 → 54 → 42</b> mL/min/1.73m² (2015–2026). Currently diagnosed with <b>CKD Stage 3a</b>." },
-    { test:/blood pressure|\bbp\b|hypertension/i, reply:"Last recorded BP was <b>160/98 mmHg</b> on 2019-08-30. No updated BP reading in file since." }
+    { test:/medic|prescri|drug|pristiq|trapax/i, reply:"<b>Prescribed Medications:</b><br>1. <b>Desvenlafaxina (Pristiq) 100mg</b> — 30 tablets<br>2. <b>Lorazepam (Trapax) 2.5mg</b> — 60 tablets" },
+    { test:/doctor|physician|who|cioffi|license/i, reply:"<b>Attending Physician:</b><br>Dra. Romina Cioffi (Specialist in Psychiatry &amp; Medical Psychology, Directora Médica CERENE).<br>License MP: <b>115.117</b>" }
   ];
 
   function toggleChat(open) {
@@ -491,7 +435,7 @@
       bMsg.className = 'bg-slate-100 text-slate-800 p-3 rounded-xl rounded-tl-none max-w-[85%] text-xs sm:text-sm';
       
       const match = CHAT_KB.find(k => k.test.test(text));
-      bMsg.innerHTML = match ? match.reply : "I couldn't find specific details on that in Rahman's record. Try asking about medications, kidney trends, or BP.";
+      bMsg.innerHTML = match ? match.reply : "I couldn't find specific details on that in Fernandez's record. Try asking about medications or the doctor.";
       
       body.appendChild(bMsg);
       body.scrollTop = body.scrollHeight;
