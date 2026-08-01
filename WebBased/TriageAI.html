@@ -56,7 +56,7 @@
   .wait-track{ background: repeating-linear-gradient(90deg, #e2e8f0 0 10px, #eef2f7 10px 20px); }
   .wait-fill{ transition: width 1.1s cubic-bezier(.22,.9,.35,1); }
 
-  input[type="range"]{ -webkit-appearance:none; height:6px; border-radius:999px; background:#e2e8f0; }
+  input[type="range"]{ height:6px; border-radius:999px; background:#e2e8f0; }
   input[type="range"]::-webkit-slider-thumb{
     -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
     background:var(--primary); border:3px solid white; box-shadow:0 1px 4px rgba(0,0,0,.25); cursor:pointer; margin-top:-7px;
@@ -143,12 +143,12 @@
 
       <!-- Demo quick-fill -->
       <div class="flex flex-wrap gap-2 mb-5 p-3 rounded-xl bg-slate-50 border border-dashed border-slate-300">
-        <span class="text-xs font-semibold text-slate-500 flex items-center gap-1 mr-1"><i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Demo:</span>
+        <span class="text-xs font-semibold text-slate-500 flex items-center gap-1 mr-1"><i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Demo Patient Credentials:</span>
         <button type="button" id="demoChestPain" class="focus-ring text-xs font-semibold px-3 py-1.5 rounded-full bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition">
-          Load Sample Patient (Chest Pain)
+          Marcus Ibrahim
         </button>
         <button type="button" id="demoMinorInjury" class="focus-ring text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition">
-          Load Sample Patient (Minor Injury)
+          Priya Nandakumar
         </button>
       </div>
 
@@ -340,6 +340,21 @@ function updateClock(){
 updateClock();
 setInterval(updateClock, 1000);
 
+/* ---------------- Load Logged In Patient Demographics ---------------- */
+window.addEventListener('DOMContentLoaded', () => {
+  const savedPatient = localStorage.getItem('loggedInPatient');
+  if (savedPatient) {
+    try {
+      const patient = JSON.parse(savedPatient);
+      if (patient.name) document.getElementById('patientName').value = patient.name;
+      if (patient.age) document.getElementById('patientAge').value = patient.age;
+      if (patient.contact) document.getElementById('emergencyContact').value = patient.contact;
+    } catch (e) {
+      console.error('Error loading patient data', e);
+    }
+  }
+});
+
 /* ---------------- Chief Complaint Pills ---------------- */
 const complaints = [
   { id: 'chest_pain', label: 'Chest Pain', icon: 'heart-crack' },
@@ -399,27 +414,16 @@ painScale.addEventListener('input', () => {
 });
 
 /* ---------------- Demo Quick-fill ---------------- */
-function clearSelectedComplaints() {
-  selectedComplaints.clear();
-  document.querySelectorAll('#complaintPills button').forEach(b => {
-    b.setAttribute('aria-pressed', 'false');
-    b.className = 'pill focus-ring flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-full border border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600';
-  });
-  otherContainer.classList.add('hidden');
-}
-
 function selectComplaintById(id){
   const btn = document.querySelector(`#complaintPills button[data-value="${id}"]`);
-  if (btn && !selectedComplaints.has(id)) btn.click();
+  if (btn) btn.click();
 }
 
 document.getElementById('demoChestPain').addEventListener('click', () => {
-  clearSelectedComplaints();
   document.getElementById('patientName').value = 'Marcus Ibrahim';
   document.getElementById('patientAge').value = 58;
   document.getElementById('emergencyContact').value = '555-019-2231';
   selectComplaintById('chest_pain');
-  selectComplaintById('shortness_of_breath');
   document.getElementById('heartRate').value = 112;
   document.getElementById('bloodPressure').value = '150/95';
   painScale.value = 9;
@@ -429,17 +433,9 @@ document.getElementById('demoChestPain').addEventListener('click', () => {
 });
 
 document.getElementById('demoMinorInjury').addEventListener('click', () => {
-  clearSelectedComplaints();
   document.getElementById('patientName').value = 'Priya Nandakumar';
   document.getElementById('patientAge').value = 27;
   document.getElementById('emergencyContact').value = '555-044-7789';
-  selectComplaintById('joint_sprain');
-  document.getElementById('heartRate').value = 76;
-  document.getElementById('bloodPressure').value = '118/76';
-  painScale.value = 3;
-  painScale.dispatchEvent(new Event('input'));
-  document.getElementById('symptomDuration').value = '24plus';
-  document.getElementById('triageForm').requestSubmit();
 });
 
 /* ---------------- ESI Level Config ---------------- */
@@ -481,7 +477,7 @@ function evaluateTriage({ selectedSet, customComplaint, painScaleVal, heartRateV
   if (has('infection') && (highHeartRate || painScaleVal >= 6)) {
     return {
       esi: 2, waitMin: 10, waitMax: 25,
-      reason: `Infection symptoms combined with elevated physiological markers (heart rate or pain) indicate high risk for systemic complications requiring urgent evaluation.`
+      reason: `Severe abdominal pain (${painScaleVal}/10) was reported. This is treated as high-acuity and prioritized ahead of non-emergent visits, pending a full vitals check.`
     };
   }
 

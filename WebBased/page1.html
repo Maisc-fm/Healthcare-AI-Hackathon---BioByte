@@ -48,14 +48,21 @@
         <i data-lucide="layout-grid" class="w-5 h-5"></i>
       </div>
       <div>
-        <h1 class="text-base font-extrabold tracking-tight text-slate-900">System Dashboard</h1>
-        <p class="text-xs text-slate-500">Select an interface to proceed</p>
+        <h1 class="text-base font-extrabold tracking-tight text-slate-900">MedSync AI</h1>
+        <p class="text-xs text-slate-500">Your Life, Simplified</p>
       </div>
     </div>
     
-    <div class="flex items-center gap-1.5 text-slate-500 text-xs mono">
-      <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-      <span id="clockDisplay">--:--:--</span>
+    <div class="flex items-center gap-4">
+      <div class="hidden sm:flex items-center gap-1.5 text-slate-500 text-xs mono border-r border-slate-200 pr-4">
+        <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+        <span id="clockDisplay">--:--:--</span>
+      </div>
+
+      <!-- LOG OUT BUTTON -->
+      <a href="login.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition focus-ring flex items-center gap-1.5">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Log Out
+      </a>
     </div>
   </div>
 </header>
@@ -63,8 +70,8 @@
 <!-- ============ MAIN HUB CONTENT ============ -->
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-12 w-full">
   <div class="text-center max-w-2xl mx-auto mb-10">
-    <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Interface Portal</h2>
-    <p class="text-sm text-slate-500">Choose a feature to launch the corresponding application screen.</p>
+    <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Welcome to MedSync AI!</h2>
+    <p class="text-sm text-slate-500">Please select a feature to get started.</p>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -82,8 +89,6 @@
         </p>
       </div>
       <div class="flex items-center gap-2 text-sm font-bold text-blue-600 group-hover:translate-x-1 transition-transform">
-        <span>Proceed to Feature 1</span>
-        <i data-lucide="arrow-right" class="w-4 h-4"></i>
       </div>
     </a>
 
@@ -100,8 +105,6 @@
         </p>
       </div>
       <div class="flex items-center gap-2 text-sm font-bold text-teal-700 group-hover:translate-x-1 transition-transform">
-        <span>Proceed to Feature 2</span>
-        <i data-lucide="arrow-right" class="w-4 h-4"></i>
       </div>
     </a>
 
